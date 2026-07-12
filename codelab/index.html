@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SDUI를 처음 접하는 Android 개발자를 위한 Remote Compose 입문 실습">
+  <title>Remote Compose 처음 시작하기</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#lesson">본문으로 건너뛰기</a>
+
+  <header class="site-header">
+    <button id="menu-button" class="icon-button menu-button" type="button" aria-label="학습 단계 열기" aria-controls="step-drawer" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <a class="brand" href="#step-0" aria-label="Remote Compose 처음 시작하기">
+      <span class="android-mark" aria-hidden="true"><span></span></span>
+      <span class="brand-copy">
+        <strong>Remote Compose 처음 시작하기</strong>
+        <small>SDUI를 몰라도 시작하는 실습</small>
+      </span>
+    </a>
+    <span class="version-chip">alpha14 POC</span>
+    <div class="header-meta">
+      <span id="completion-label">0 / 10 완료</span>
+      <a href="https://developer.android.com/jetpack/androidx/releases/compose-remote">공식 릴리스 노트</a>
+    </div>
+  </header>
+  <div class="top-progress" aria-hidden="true"><span id="top-progress-bar"></span></div>
+
+  <div class="app-shell">
+    <aside id="step-drawer" class="step-drawer" aria-label="학습 단계">
+      <div class="drawer-intro">
+        <p class="eyebrow">BEGINNER PATH</p>
+        <h2>서버가 보낸 UI를<br>앱에서 그려보기</h2>
+        <p>예상 소요 시간 · 45분</p>
+      </div>
+      <ol class="step-list">
+        <li><button type="button" data-step-target="0"><span>1</span><b>완성 화면 보기</b><small>무엇을 만들까?</small></button></li>
+        <li><button type="button" data-step-target="1"><span>2</span><b>SDUI 이해하기</b><small>화면의 결정권 이동</small></button></li>
+        <li><button type="button" data-step-target="2"><span>3</span><b>샘플 실행하기</b><small>서버와 앱 연결</small></button></li>
+        <li><button type="button" data-step-target="3"><span>4</span><b>서버에서 첫 UI</b><small>RcScope의 Column과 Text</small></button></li>
+        <li><button type="button" data-step-target="4"><span>5</span><b>문서 만들기</b><small>Header에서 ByteArray까지</small></button></li>
+        <li><button type="button" data-step-target="5"><span>6</span><b>문서 안의 상태</b><small>StateLayout과 setValue</small></button></li>
+        <li><button type="button" data-step-target="6"><span>7</span><b>목록과 상세</b><small>두 화면 전환</small></button></li>
+        <li><button type="button" data-step-target="7"><span>8</span><b>앱에 작업 요청하기</b><small>hostAction 이해</small></button></li>
+        <li><button type="button" data-step-target="8"><span>9</span><b>Ktor로 문서 보내기</b><small>POC 서버 연결</small></button></li>
+        <li><button type="button" data-step-target="9"><span>10</span><b>정리와 다음 단계</b><small>할 수 있는 것과 한계</small></button></li>
+      </ol>
+    </aside>
+
+    <button id="drawer-overlay" class="drawer-overlay" type="button" aria-label="학습 단계 닫기" hidden></button>
+
+    <main id="lesson" class="lesson" tabindex="-1">
+      <div class="lesson-content">
+        <article class="codelab-step" data-step="0">
+          <header class="lesson-header">
+            <p class="step-kicker">1 · 시작하기</p>
+            <h1>먼저, 완성될 화면부터 봅니다</h1>
+            <p class="lead">서버에 저장된 작업 목록을 Android 앱이 받아서 그리고, 목록에서 상세 화면으로 이동하고, 새 작업을 직접 입력해 추가하는 POC를 따라갑니다.</p>
+            <div class="lesson-facts"><span>Android 기초만 필요</span><span>SDUI 사전 지식 불필요</span><span>Google 공식 Codelab 아님</span></div>
+          </header>
+
+          <section>
+            <h2>우리가 만들 흐름</h2>
+            <div class="screenshot-story">
+              <figure>
+                <img src="../samples/remote-state-lab/raw/verification/2026-07-11-korean-checklist/connection.png" alt="서버 주소를 입력하고 연결하는 Android 화면">
+                <figcaption><b>1. 서버 연결</b><span>앱이 문서를 받을 주소를 입력합니다.</span></figcaption>
+              </figure>
+              <figure>
+                <img src="../samples/remote-state-lab/raw/verification/2026-07-11-dynamic-task-flow/list-scrolled-12-items.png" alt="Remote Compose로 그린 여러 작업 목록">
+                <figcaption><b>2. 목록 표시</b><span>서버가 만든 Remote Compose 문서를 앱이 그립니다.</span></figcaption>
+              </figure>
+              <figure>
+                <img src="../samples/remote-state-lab/raw/verification/2026-07-11-dynamic-task-flow/typed-task-detail.png" alt="직접 입력한 작업의 Remote Compose 상세 화면">
+                <figcaption><b>3. 추가와 상세</b><span>앱이 입력과 API를 담당하고 문서를 다시 받습니다.</span></figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section>
+            <h2>지금은 이것만 기억하세요</h2>
+            <div class="one-sentence">
+              <span aria-hidden="true">1</span>
+              <p><b>Remote Compose는 서버가 보낸 UI 문서를 Android 앱 안에서 화면으로 그리는 기술입니다.</b><br>서버가 Android 앱 전체를 보내는 것도, Kotlin 소스 코드를 실행시키는 것도 아닙니다.</p>
+            </div>
+            <div class="callout callout-note"><span>i</span><div><b>이 코드랩의 한 가지 경로</b><p><code>Ktor/JVM → RcScope → ByteArray → Android Player</code>만 따라갑니다. <code>@RemoteComposable</code>, <code>RemoteText</code>, <code>.rs/.rb</code>를 사용하는 Android Compose 생성 경로는 다른 제작 방식이므로 마지막 심화 자료로 분리합니다.</p></div></div>
+          </section>
+
+          <section>
+            <h2>준비물</h2>
+            <label class="check-row"><input type="checkbox" data-check="ready-android"><span>Android Studio에서 일반 Compose 앱을 실행해 본 적이 있다.</span></label>
+            <label class="check-row"><input type="checkbox" data-check="ready-jdk"><span>JDK 17과 Android Emulator를 사용할 수 있다.</span></label>
+            <label class="check-row"><input type="checkbox" data-check="ready-repo"><span>이 저장소를 열었다. SDUI와 Ktor 경험은 없어도 된다.</span></label>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="1" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">2 · 개념</p>
+            <h1>SDUI는 “화면 결정권”을 서버와 나누는 방식입니다</h1>
+            <p class="lead">SDUI는 Server-Driven UI의 줄임말입니다. 서버가 데이터만 보내는 대신, 어떤 UI를 어떤 순서로 보여줄지에 대한 설명도 함께 보냅니다.</p>
+          </header>
+
+          <section>
+            <h2>일반 앱과 비교하면 쉽습니다</h2>
+            <div class="sdui-compare">
+              <div>
+                <span class="compare-label">일반 Android 앱</span>
+                <div class="mini-flow"><b>서버 데이터</b><i>→</i><b>앱에 고정된 UI 코드</b><i>→</i><b>화면</b></div>
+                <p>서버가 같은 데이터를 보내면 앱에 이미 배포된 Compose 코드가 화면을 결정합니다.</p>
+              </div>
+              <div class="is-remote">
+                <span class="compare-label">Server-Driven UI</span>
+                <div class="mini-flow"><b>UI 설명 + 데이터</b><i>→</i><b>앱의 Renderer</b><i>→</i><b>화면</b></div>
+                <p>서버가 목록·텍스트·순서 같은 설명을 바꾸면 앱 재배포 없이 화면 구성이 달라질 수 있습니다.</p>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2>Remote Compose는 여기서 무엇을 하나요?</h2>
+            <div class="beginner-definition">
+              <div><span>서버</span><b>Remote Compose 문서 생성</b><p>텍스트, 레이아웃, 상태, 액션을 문서로 만듭니다.</p></div>
+              <i aria-hidden="true">→</i>
+              <div><span>Android 앱</span><b>문서 해석</b><p>앱 안의 player가 문서를 읽습니다.</p></div>
+              <i aria-hidden="true">→</i>
+              <div><span>사용자</span><b>실제 화면</b><p>일반 Android 화면 안에 렌더링됩니다.</p></div>
+            </div>
+            <div class="callout callout-warning"><span>!</span><div><b>문서는 Kotlin 소스 코드가 아닙니다</b><p>앱은 미리 지원하기로 한 Remote Compose 명령만 해석합니다. 서버가 임의의 Android 코드를 내려보내 실행하는 구조가 아닙니다.</p></div></div>
+          </section>
+
+          <section>
+            <h2>언제 유용할까요?</h2>
+            <ul>
+              <li>앱 배포 주기와 별개로 프로모션, 설문, 체크리스트 구성을 바꾸고 싶을 때</li>
+              <li>Android가 허용한 UI와 액션 범위 안에서 서버가 화면 순서를 결정하게 할 때</li>
+              <li>여러 앱 버전이 같은 문서를 안전하게 재생하도록 호환성 규칙을 운영할 수 있을 때</li>
+            </ul>
+            <p class="source-footnote">다음 단계에서는 설명보다 먼저 실제 샘플을 실행합니다.</p>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="2" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">3 · 실행</p>
+            <h1>서버를 켜고 앱을 연결해 봅니다</h1>
+            <p class="lead">이 저장소는 이해를 돕기 위해 Ktor/JVM 서버와 Android 앱을 함께 제공합니다. Ktor는 Remote Compose의 필수 요소가 아니라, 문서 바이트를 전달하기 위해 이 POC가 선택한 서버입니다.</p>
+          </header>
+
+          <section>
+            <h2>1. 서버 실행</h2>
+            <p><code>server/</code>는 독립 Gradle 프로젝트입니다. 아래 명령은 Android 앱을 빌드하지 않고 서버만 실행합니다.</p>
+            <div class="code-block" data-language="Shell">
+              <div class="code-toolbar"><span class="evidence-badge custom">저장소 POC</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>cd samples/remote-state-lab/server
+./gradlew run</code></pre>
+            </div>
+            <div class="callout callout-note"><span>i</span><div><b><code>127.0.0.1</code>과 <code>10.0.2.2</code>는 왜 다를까요?</b><p><code>127.0.0.1</code>은 그 주소를 사용하는 기기 자신입니다. 에뮬레이터 안의 <code>127.0.0.1</code>은 Mac이 아니므로, Android Emulator가 host 컴퓨터를 가리키도록 제공하는 <code>10.0.2.2</code>를 씁니다.</p></div></div>
+          </section>
+
+          <section>
+            <h2>2. 앱 실행과 연결</h2>
+            <div class="code-block" data-language="Shell">
+              <div class="code-toolbar"><span class="evidence-badge custom">저장소 POC</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>cd samples/remote-state-lab
+./gradlew :app:assembleDebug</code></pre>
+            </div>
+            <ol class="numbered-process">
+              <li><span>1</span><div><b>앱을 에뮬레이터에서 실행</b><p>처음 보이는 화면은 일반 Jetpack Compose로 만든 연결 화면입니다.</p></div></li>
+              <li><span>2</span><div><b><code>http://10.0.2.2:8080</code> 입력</b><p>Android Emulator에서 Mac의 8080 포트로 접근하는 주소입니다.</p></div></li>
+              <li><span>3</span><div><b>연결 선택</b><p>앱이 <code>GET /document</code>로 바이트를 받고 Remote Compose 화면을 엽니다.</p></div></li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>관찰할 것</h2>
+            <label class="check-row"><input type="checkbox" data-check="run-list"><span>연결 화면에서 작업 목록 전체 화면으로 바뀌었다.</span></label>
+            <label class="check-row"><input type="checkbox" data-check="run-detail"><span>목록의 작업을 누르면 상세 화면이 나타나고 다시 목록으로 돌아온다.</span></label>
+            <label class="check-row"><input type="checkbox" data-check="run-create"><span>새 작업을 입력하면 목록이 자동으로 갱신된다.</span></label>
+            <div class="callout callout-warning"><span>!</span><div><b><code>Address already in use</code>가 나오면</b><p>이미 8080 포트를 쓰는 서버가 있다는 뜻입니다. <code>lsof -nP -iTCP:8080 -sTCP:LISTEN</code>으로 확인하고 기존 POC 서버를 재사용하거나 종료합니다.</p></div></div>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="3" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">4 · UI</p>
+            <h1>서버 코드에서 첫 Remote UI를 작성합니다</h1>
+            <p class="lead">이 코드랩에서는 Ktor/JVM이 <code>RcScope</code> DSL을 실행해 UI operation을 문서에 기록합니다. 이 코드는 서버에서 실행되며 Android 화면을 직접 그리지 않습니다.</p>
+          </header>
+
+          <section>
+            <h2>이름은 비슷해도 실행 장소가 다릅니다</h2>
+            <div class="table-wrap"><table>
+              <thead><tr><th>하려는 일</th><th>Android의 Jetpack Compose</th><th>서버의 RcScope DSL</th></tr></thead>
+              <tbody>
+                <tr><td>세로 배치</td><td><code>Column</code></td><td><code>Column</code></td></tr>
+                <tr><td>문자 표시</td><td><code>Text</code></td><td><code>Text</code></td></tr>
+                <tr><td>수정자</td><td><code>androidx.compose.ui.Modifier</code></td><td><code>androidx.compose.remote.creation.dsl.Modifier</code></td></tr>
+                <tr><td>클릭</td><td><code>Modifier.clickable { Kotlin lambda }</code></td><td><code>Modifier.onClick { document action }</code></td></tr>
+                <tr><td>결과</td><td>현재 Android UI tree</td><td>나중에 보낼 Remote Compose operation</td></tr>
+              </tbody>
+            </table></div>
+            <div class="callout callout-danger"><span>!</span><div><b>서버의 <code>Text</code>는 Jetpack Compose <code>Text</code>가 아닙니다</b><p><code>createRcBuffer { ... }</code>가 제공하는 <code>RcScope</code> receiver의 함수입니다. 이름이 같을 뿐 <code>@Composable</code>도 아니고 Android UI toolkit도 아닙니다.</p></div></div>
+          </section>
+
+          <section>
+            <h2>가장 작은 작업 목록</h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge restricted">Restricted RcScope · 실제 POC 경로</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>private fun RcScope.TaskListContent() {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(18f),
+    ) {
+        Text("오늘 할 일")
+        Text("API 회귀 테스트")
+    }
+}</code></pre>
+            </div>
+            <ol class="numbered-process">
+              <li><span>1</span><div><b><code>RcScope.</code> 확장 함수</b><p>Remote Compose writer를 receiver로 받아 operation을 추가합니다.</p></div></li>
+              <li><span>2</span><div><b><code>Column</code></b><p>세로 container를 문서에 기록하고 block 안의 child operation을 이어서 기록합니다.</p></div></li>
+              <li><span>3</span><div><b><code>Text(String)</code></b><p>procedural DSL에는 일반 <code>String</code> overload가 있으므로 이 경로에서는 <code>.rs</code>가 필요하지 않습니다.</p></div></li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>왜 restricted 배지가 붙나요?</h2>
+            <p>alpha14에서 이 저장소가 사용하는 <code>RcScope</code>와 <code>createRcBuffer</code>는 AndroidX source상 <code>LIBRARY_GROUP</code> 제한 API입니다. 서버 중심 SDUI를 가장 직접적으로 실험할 수 있지만, 안정 public 계약으로 간주하면 안 됩니다.</p>
+            <div class="callout callout-note"><span>i</span><div><b>이 코드랩의 선택</b><p>“공개 API를 모두 먼저 배우기”보다 “현재 샘플이 실제로 동작하는 한 경로를 끝까지 이해하기”를 우선합니다. 다른 생성 frontend는 Step 10의 심화 자료에서 비교합니다.</p></div></div>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="4" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">5 · 문서 생성</p>
+            <h1>Header와 UI를 하나의 ByteArray로 만듭니다</h1>
+            <p class="lead"><code>RcScope</code> UI만 적는 것으로는 전송이 끝나지 않습니다. 서버는 player가 해석할 문서 속성을 지정하고, UI operation과 함께 buffer로 직렬화합니다.</p>
+          </header>
+
+          <section>
+            <h2>서버 안에서 일어나는 네 단계</h2>
+            <div class="simple-pipeline">
+              <div><span>1</span><b>Profile</b><small>지원 protocol과 platform</small></div>
+              <i>→</i>
+              <div><span>2</span><b>Header</b><small>크기·density·설명</small></div>
+              <i>→</i>
+              <div><span>3</span><b>자동 Root + UI</b><small><code>RootLayoutComponent</code> 아래의 content</small></div>
+              <i>→</i>
+              <div><span>4</span><b>Buffer</b><small><code>ByteArray</code></small></div>
+            </div>
+          </section>
+
+          <section>
+            <h2>실제 서버의 문서 생성 함수</h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge restricted">Restricted RcScope · 실제 코드 축약</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>fun buildChecklistDocument(snapshot: ChecklistServerSnapshot): ByteArray =
+    createRcBuffer(
+        rcProfile,
+        RemoteComposeWriter.HTag(Header.DOC_WIDTH, 390),
+        RemoteComposeWriter.HTag(Header.DOC_HEIGHT, 720),
+        RemoteComposeWriter.HTag(
+            Header.DOC_DENSITY_BEHAVIOR,
+            CoreDocument.DENSITY_BEHAVIOR_DP,
+        ),
+    ) {
+        TaskListContent()
+    }
+</code></pre>
+            </div>
+            <ol class="numbered-process">
+              <li><span>1</span><div><b><code>rcProfile</code></b><p>writer와 player가 어떤 Remote Compose profile을 전제로 하는지 정합니다.</p></div></li>
+              <li><span>2</span><div><b><code>Header.*</code></b><p>문서 viewport와 density behavior 같은 해석 조건을 기록합니다.</p></div></li>
+              <li><span>3</span><div><b><code>{ TaskListContent() }</code></b><p><code>createRcBuffer</code>가 자동으로 <code>RootLayoutComponent</code>를 기록하고, 이 block의 layout/text operation을 그 아래에 넣습니다.</p></div></li>
+              <li><span>4</span><div><b><code>ByteArray</code></b><p><code>createRcBuffer</code>가 Header와 operation을 전송 가능한 binary document로 반환합니다.</p></div></li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>Header, root, state를 섞지 마세요</h2>
+            <div class="table-wrap"><table>
+              <thead><tr><th>용어</th><th>역할</th><th>이 샘플에서 보이는 곳</th></tr></thead>
+              <tbody>
+                <tr><td>Header</td><td>문서 전체의 version/property framing</td><td><code>createRcBuffer</code> 인자</td></tr>
+                <tr><td>Root wrapper</td><td>화면 tree의 최상위 <code>RootLayoutComponent</code></td><td><code>createRcBuffer</code>가 자동 생성</td></tr>
+                <tr><td>Root content</td><td>root 아래의 layout·data·action operation</td><td>buffer의 content block</td></tr>
+                <tr><td>Remote state</td><td>Player가 ID로 보관·변경하는 값</td><td>다음 단계의 <code>remoteNamedInteger</code></td></tr>
+              </tbody>
+            </table></div>
+            <div class="callout callout-warning"><span>!</span><div><b>별도의 <code>RootState</code>라는 API를 찾지 마세요</b><p>root layout과 runtime state는 다른 개념입니다. binary format은 flat operation을 기록하고 player가 container/end operation을 해석해 UI tree를 복원합니다.</p></div></div>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="5" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">6 · 상태</p>
+            <h1>문서 안의 상태는 ID와 action으로 움직입니다</h1>
+            <p class="lead">서버의 Kotlin 코드는 문서를 만들 때 한 번 실행됩니다. 재생 중에는 Android Player가 문서에 기록된 state ID를 읽고 <code>setValue</code> action을 적용합니다.</p>
+          </header>
+
+          <section>
+            <h2>Jetpack Compose state와 실행 방식이 다릅니다</h2>
+            <div class="state-worlds">
+              <div>
+                <span>JETPACK COMPOSE</span>
+                <b>Kotlin 코드가 다시 실행됩니다</b>
+                <p><code>mutableStateOf</code>가 바뀌면 Android 프로세스에서 recomposition이 일어나고 Composable을 다시 평가합니다.</p>
+              </div>
+              <i>≠</i>
+              <div class="remote-world">
+                <span>REMOTE DOCUMENT</span>
+                <b>Player가 기록된 operation을 평가합니다</b>
+                <p>click은 서버 함수를 다시 호출하지 않습니다. state map의 ID 값을 바꾸고 <code>StateLayout</code>이 이미 기록된 child를 다시 선택합니다.</p>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2>procedural DSL로 완료 토글 만들기</h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge restricted">Restricted RcScope · 개념용 축약</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>val done = remoteNamedInteger("done", 0)
+
+StateLayout(stateIndex = done) {
+    Box(modifier = Modifier.onClick { setValue(done, 1) }) {
+        Text("미완료")
+    }
+    Box(modifier = Modifier.onClick { setValue(done, 0) }) {
+        Text("완료")
+    }
+}</code></pre>
+            </div>
+            <ol class="state-code-walkthrough">
+              <li><span>1</span><div><b><code>remoteNamedInteger("done", 0)</code></b><p>초깃값 0을 가진 document state를 만들고 writer가 사용할 ID를 연결합니다.</p></div></li>
+              <li><span>2</span><div><b><code>StateLayout(stateIndex = done)</code></b><p>state 값과 같은 순서의 child 하나를 표시하는 selector operation을 기록합니다.</p></div></li>
+              <li><span>3</span><div><b>첫 번째 layout child</b><p><code>done = 0</code>일 때 첫 <code>Box</code>와 “미완료”를 표시하고, click action은 값을 1로 바꿉니다.</p></div></li>
+              <li><span>4</span><div><b>두 번째 layout child</b><p><code>done = 1</code>일 때 두 번째 <code>Box</code>와 “완료”를 표시하고, click action은 값을 0으로 되돌립니다.</p></div></li>
+            </ol>
+            <div class="callout callout-note"><span>핵심</span><div><b><code>onClick</code> block은 임의의 서버 로직이 아닙니다</b><p>문서 생성 중 <code>setValue</code> action을 기록하는 DSL block입니다. 재생 중 click에서 Ktor의 이 Kotlin block이 실행되는 것이 아닙니다.</p></div></div>
+            <div class="callout callout-warning"><span>!</span><div><b><code>StateLayout</code>에는 layout child를 넣습니다</b><p>alpha14 player의 <code>StateLayout.getLayout(index)</code>는 <code>LayoutManager</code> child를 선택합니다. 따라서 <code>Text</code>를 바로 나열하지 않고 각 상태를 <code>Box</code>, <code>Column</code> 같은 layout으로 감쌉니다.</p></div></div>
+          </section>
+
+          <section>
+            <h2>생성된 문서를 단순화하면 이렇습니다</h2>
+            <div class="document-state-model" aria-label="procedural 토글 예제가 생성한 문서의 단순화 모델">
+              <div><span>STATE</span><b>NamedInt <code>#42 = 0</code></b><small>이름은 done</small></div>
+              <div><span>SELECTOR</span><b>StateLayout <code>indexId = #42</code></b><small>현재 값과 같은 child만 표시</small></div>
+              <div><span>LAYOUT 0</span><b>Box → “미완료”</b><small>click → set <code>#42 = 1</code></small></div>
+              <div><span>LAYOUT 1</span><b>Box → “완료”</b><small>click → set <code>#42 = 0</code></small></div>
+            </div>
+            <p class="caption">ID <code>#42</code>는 이해를 위한 예시입니다. 실제 ID는 writer가 문서를 만들며 할당합니다.</p>
+          </section>
+
+          <section>
+            <h2>Player 동작을 직접 눌러봅니다</h2>
+            <div class="runtime-lab" aria-labelledby="runtime-lab-title">
+              <div class="runtime-lab-heading">
+                <div><span>학습용 모델 · 실제 Player UI 아님</span><b id="runtime-lab-title">Remote state playback</b></div>
+                <code>RemoteComposeState[#42] = <strong id="runtime-state-value">0</strong></code>
+              </div>
+              <div class="runtime-branches">
+                <div id="runtime-child-false" class="runtime-branch is-active"><span>child 0</span><b>미완료</b><small>click action: #42에 1 기록</small></div>
+                <div id="runtime-child-true" class="runtime-branch"><span>child 1</span><b>완료</b><small>click action: #42에 0 기록</small></div>
+              </div>
+              <div class="runtime-controls">
+                <button id="runtime-toggle" type="button">현재 child의 click 실행</button>
+                <button id="runtime-reset" type="button">0으로 초기화</button>
+              </div>
+              <p id="runtime-event" class="runtime-event" aria-live="polite">초기 문서를 재생했습니다. #42가 0이므로 child 0만 표시합니다.</p>
+            </div>
+            <div class="callout callout-warning"><span>!</span><div><b>document state는 서버 DB가 아닙니다</b><p>Player 안에서 표시 상태만 바뀐 것입니다. 저장된 작업, 권한, 결제처럼 영속성과 domain rule이 필요한 값은 Repository와 서버가 계속 소유해야 합니다.</p></div></div>
+          </section>
+
+          <section>
+            <h2>어떤 상태를 어디에 둘까요?</h2>
+            <div class="table-wrap"><table>
+              <thead><tr><th>상태 예시</th><th>소유자</th><th>이유</th></tr></thead>
+              <tbody>
+                <tr><td>현재 펼쳐진 설명, 작은 화면 selector</td><td>Remote document state</td><td>문서 안에서 즉시 바뀌고 reset되어도 안전</td></tr>
+                <tr><td>서버 연결, loading/error</td><td>Android ViewModel</td><td>lifecycle, retry, fallback UI가 필요</td></tr>
+                <tr><td>사용자 입력 중인 문자열</td><td>Android UI/ViewModel</td><td>현재 POC의 procedural component에는 일반 IME TextField가 없음</td></tr>
+                <tr><td>저장된 작업, 권한, 결제 상태</td><td>Repository/server</td><td>영속성, 인증, domain rule이 필요</td></tr>
+              </tbody>
+            </table></div>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="6" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">7 · 화면 전환</p>
+            <h1>목록과 상세를 한 문서에 함께 기록합니다</h1>
+            <p class="lead">현재 샘플은 Android Navigation을 호출하지 않습니다. <code>screen</code> state를 selector로 사용해 한 Remote Compose 문서 안에서 목록 child와 상세 child를 교체합니다.</p>
+          </header>
+
+          <section>
+            <h2>실제 샘플의 StateLayout 구조</h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge restricted">Restricted RcScope · 실제 서버 코드</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>val screen = remoteNamedInteger("screen", 0)
+
+StateLayout(
+    stateIndex = screen,
+    modifier = Modifier.fillMaxSize(),
+) {
+    TaskListScreen(snapshot, screen)
+
+    snapshot.tasks.forEach { task ->
+        TaskDetailScreen(snapshot, task, screen)
+    }
+}</code></pre>
+            </div>
+            <div class="screen-selector">
+              <div class="is-active"><span>screen = 0</span><b>작업 목록</b><small>첫 번째 child</small></div>
+              <i>⇄</i>
+              <div><span>screen = index + 1</span><b>선택한 작업 상세</b><small>각 task의 child</small></div>
+            </div>
+          </section>
+
+          <section>
+            <h2>행을 누르면 왜 상세가 보이나요?</h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge restricted">Restricted RcScope · 실제 동작 축약</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>snapshot.tasks.forEachIndexed { index, task ->
+    TaskRow(
+        task = task,
+        detailScreenIndex = index + 1,
+        screen = screen,
+    )
+}
+
+// TaskRow 내부
+Modifier.onClick {
+    setValue(screen, detailScreenIndex)
+}
+
+// 상세의 뒤로 버튼
+Modifier.onClick {
+    setValue(screen, 0)
+}</code></pre>
+            </div>
+            <ol class="numbered-process">
+              <li><span>1</span><div><b>문서 생성</b><p>서버 snapshot의 task 수만큼 상세 child를 미리 기록합니다.</p></div></li>
+              <li><span>2</span><div><b>행 click</b><p>Player가 <code>screen</code> ID에 <code>index + 1</code>을 기록합니다.</p></div></li>
+              <li><span>3</span><div><b>child 선택</b><p><code>StateLayout</code>이 바뀐 index에 해당하는 상세 child를 표시합니다. UI를 위에 덮는 방식이 아닙니다.</p></div></li>
+              <li><span>4</span><div><b>목록 복귀</b><p><code>screen = 0</code>으로 바꾸면 첫 번째 child인 목록을 다시 표시합니다.</p></div></li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>이것은 Android Navigation인가요?</h2>
+            <p><b>아닙니다.</b> Activity, Fragment, Navigation Compose destination이나 back stack은 변하지 않습니다.</p>
+            <div class="comparison"><div><p><b>StateLayout이 적합</b></p><p>작은 설문 단계, 문서 내부 목록/상세, reset되어도 안전한 임시 전환</p></div><div><p><b>Android Navigation이 적합</b></p><p>deep link, 시스템 back, 다른 feature graph, process restore, 앱 전체 화면 소유권</p></div></div>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="7" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">8 · 앱과 연결</p>
+            <h1>서버 저장이 필요하면 hostAction으로 앱에 알립니다</h1>
+            <p class="lead"><code>setValue</code>는 document-local 상태만 바꿉니다. 입력창, API, 인증, 저장이 필요하면 문서는 이름 있는 event를 발생시키고 Android host가 실제 business 작업을 수행합니다.</p>
+          </header>
+
+          <section>
+            <h2><code>task.create</code>가 API 요청으로 이어지는 전체 과정</h2>
+            <div class="host-action-story">
+              <div><span>RcScope 문서</span><b><code>hostAction("task.create")</code></b><p>문서에 named action 기록</p></div>
+              <i>→</i>
+              <div><span>Android callback</span><b><code>onNamedAction</code></b><p>Player가 이름을 host에 전달</p></div>
+              <i>→</i>
+              <div><span>ViewModel</span><b><code>handleHostAction</code></b><p>allowlist 검사와 입력 UI 요청</p></div>
+              <i>→</i>
+              <div><span>Repository/API</span><b><code>POST /tasks</code></b><p>입력값을 Ktor 서버에 저장</p></div>
+            </div>
+          </section>
+
+          <section>
+            <h2>서버가 문서에 기록하는 action</h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge restricted">Restricted RcScope · 실제 서버 문법</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>ActionButton(label = "+  새 작업 작성") {
+    hostAction("task.create")
+}
+
+ActionButton(label = "삭제") {
+    hostAction("task.delete.${task.id}")
+}</code></pre>
+            </div>
+            <p><code>hostAction</code> 자체는 HTTP 요청을 보내지 않습니다. 문자열을 문서 action으로 기록할 뿐이며, Android host가 그 이름을 해석했기 때문에 결과적으로 API 호출이 일어납니다.</p>
+          </section>
+
+          <section>
+            <h2>Android 앱이 business action으로 번역합니다</h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge custom">저장소 POC · host integration</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>RemoteDocumentPlayer(
+    document = document,
+    documentWidth = 390,
+    documentHeight = 720,
+    onNamedAction = { name, value, _ ->
+        viewModel.handleHostAction(name, value)
+    },
+)</code></pre>
+            </div>
+            <div class="callout callout-danger"><span>!</span><div><b>문서 문자열을 URL이나 함수처럼 실행하지 마세요</b><p><code>task.create</code>와 양의 정수 ID를 가진 <code>task.delete.&lt;id&gt;</code>처럼 앱이 아는 command만 허용하고 payload를 검증해야 합니다.</p></div></div>
+            <p class="caption"><code>documentWidth</code>와 <code>documentHeight</code>는 alpha14 signature의 필수 인자입니다. <code>RemoteDocumentPlayer</code> 자체도 고정 source 기준 restricted이므로 안정 public player 계약으로 제시하지 않습니다.</p>
+          </section>
+
+          <section>
+            <h2>왜 텍스트 입력은 Android가 담당하나요?</h2>
+            <p>현재 POC에서 확인한 procedural component surface에는 일반 Android <code>TextField</code>처럼 IME로 자유 입력을 받는 component가 없습니다. 그래서 <code>task.create</code>를 받으면 Android가 native 입력 UI를 열고, 입력 완료 후 Repository가 서버에 저장합니다.</p>
+            <div class="callout callout-note"><span>결론</span><div><b>Remote Compose가 ViewModel이나 Repository를 대신하지 않습니다</b><p>문서는 표시·문서 내부 상태·허용된 event를 표현합니다. lifecycle, 입력, 인증, retry, persistence와 domain rule은 기존 Android architecture에 남습니다.</p></div></div>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="8" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">9 · 서버 연결</p>
+            <h1>Ktor route가 문서 바이트를 응답합니다</h1>
+            <p class="lead">문서 생성 함수와 HTTP transport를 연결합니다. Ktor 자체가 Remote Compose UI를 그리는 것은 아니며, 생성된 <code>ByteArray</code>를 응답으로 전달합니다.</p>
+          </header>
+
+          <section>
+            <h2>POC의 <code>GET /document</code></h2>
+            <div class="code-block" data-language="Kotlin">
+              <div class="code-toolbar"><span class="evidence-badge custom">저장소 POC · 공식 Ktor 통합 아님</span><button class="copy-button" type="button">코드 복사</button></div>
+              <pre><code>get("/document") {
+    call.respondBytes(
+        bytes = buildChecklistDocument(taskStore.snapshot()),
+        contentType = ContentType.Application.OctetStream,
+    )
+}</code></pre>
+            </div>
+            <ol class="numbered-process">
+              <li><span>1</span><div><b><code>taskStore.snapshot()</code></b><p>현재 서버 작업 데이터를 읽습니다.</p></div></li>
+              <li><span>2</span><div><b><code>buildChecklistDocument(...)</code></b><p>데이터에 맞는 Remote Compose 문서 바이트를 만듭니다.</p></div></li>
+              <li><span>3</span><div><b><code>respondBytes(...)</code></b><p>Ktor가 그 바이트를 HTTP 응답으로 보냅니다.</p></div></li>
+              <li><span>4</span><div><b>Android player</b><p>앱이 받은 바이트를 검증하고 화면으로 그립니다.</p></div></li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>누가 무엇을 소유하나요?</h2>
+            <div class="ownership-simple">
+              <div><span>Remote 문서</span><b>표시와 문서 내부 상태</b><p>목록, 텍스트, 상세 child 선택, host action 이름</p></div>
+              <div><span>Android 앱</span><b>신뢰 경계와 business orchestration</b><p>연결, 입력창, action 검증, ViewModel, Repository, fallback UI</p></div>
+              <div><span>Ktor 서버</span><b>데이터와 문서 생산</b><p>task 저장, API, 현재 데이터로 문서 생성, bytes 응답</p></div>
+            </div>
+            <div class="callout callout-note"><span>i</span><div><b>공식 Ktor용 Remote Compose 문서가 있나요?</b><p>현재 조사 범위에서 Remote Compose와 Ktor를 연결하는 공식 guide나 Codelab은 확인하지 못했습니다. AndroidX는 JVM 생성 artifact를 제공하지만, Ktor route와 배포 구조는 이 저장소의 engineering POC입니다.</p></div></div>
+          </section>
+
+          <section>
+            <h2>서버가 바꾸면 앱에 무엇이 보일까요?</h2>
+            <p>작업을 추가한 뒤 새 문서를 요청하면 서버는 새로운 목록으로 문서를 다시 만듭니다. 앱은 새 바이트를 받아 player에 전달하고, 사용자는 갱신된 목록을 봅니다. 이 POC의 “자동 동기화”는 이 재요청 과정을 뜻합니다.</p>
+            <div class="source-strip">
+              <a href="https://api.ktor.io/ktor-server-core/io.ktor.server.response/respond-bytes.html"><b>Ktor <code>respondBytes</code></b><span>바이트 응답을 보내는 공식 Ktor API</span></a>
+              <a href="../reference/wiki/ktor-transport.md"><b>Ktor transport 연구</b><span>이 저장소의 설계와 제한</span></a>
+            </div>
+          </section>
+        </article>
+
+        <article class="codelab-step" data-step="9" hidden>
+          <header class="lesson-header">
+            <p class="step-kicker">10 · 마무리</p>
+            <h1>서버 중심 SDUI 한 경로를 끝까지 연결했습니다</h1>
+            <p class="lead">이 코드랩의 기준은 <code>Ktor/JVM → RcScope document → HTTP ByteArray → Android Player</code>입니다. 다른 생성 frontend를 섞지 않고 현재 POC의 실행 모델과 책임 경계를 배웠습니다.</p>
+          </header>
+
+          <section>
+            <h2>한 번에 다시 보기</h2>
+            <div class="final-flow">
+              <b>서버 데이터</b><i>→</i><b>RcScope UI operation</b><i>→</i><b>Remote Compose bytes</b><i>→</i><b>Android Player</b><i>→</i><b>화면</b>
+            </div>
+            <div class="final-flow return"><b>사용자 클릭</b><i>→</i><b>hostAction</b><i>→</i><b>Android ViewModel</b><i>→</i><b>Repository/API</b><i>→</i><b>새 문서 요청</b></div>
+          </section>
+
+          <section>
+            <h2>이 코드랩에서 사용한 것의 지위</h2>
+            <div class="table-wrap"><table>
+              <thead><tr><th>항목</th><th>분류</th><th>학습 결론</th></tr></thead>
+              <tbody>
+                <tr><td><code>RcScope</code>, <code>createRcBuffer</code>, <code>StateLayout</code>, <code>setValue</code></td><td><span class="status no">Restricted</span></td><td>현재 Ktor/JVM POC의 문서 생성 경로이며 안정 public 계약이 아님</td></tr>
+                <tr><td><code>RemoteDocumentPlayer</code></td><td><span class="status no">Restricted</span></td><td>Android 앱 embedded playback POC 경로</td></tr>
+                <tr><td>Ktor route, <code>HostActionRouter</code>, <code>scaledSp</code></td><td><span class="status no">Custom</span></td><td>AndroidX가 제공한 공식 통합이 아니라 저장소 구현</td></tr>
+                <tr><td>Remote Compose wire document</td><td><span class="status yes">AndroidX</span></td><td>두 실행 환경 사이에 전달되는 layout/state/action 표현</td></tr>
+              </tbody>
+            </table></div>
+          </section>
+
+          <section>
+            <h2>다른 제작 방식은 별도 심화 과제입니다</h2>
+            <p>Android 또는 Android 기반 CI에서 <code>@RemoteComposable</code> content를 capture하는 public Compose frontend도 존재합니다. 그 경로에서 <code>RemoteText</code>, <code>.rs</code>, <code>.rb</code>, <code>valueChange</code>가 등장합니다. 하지만 서버에서 <code>RcScope.Text(String)</code>를 직접 사용하는 이번 경로에는 필요하지 않습니다.</p>
+            <div class="callout callout-note"><span>선택</span><div><b>제작 위치를 먼저 정한 뒤 API를 배우세요</b><p>서버가 요청마다 데이터로 문서를 동적 생성하면 이 코드랩을 따릅니다. Android/CI에서 미리 문서를 capture해 서버나 CDN에 배포하려면 아래 public Compose frontend 심화 문서를 따릅니다.</p></div></div>
+            <div class="resource-list">
+              <a href="../reference/wiki/remote-state-and-values.md"><b>심화 · Android Compose 생성 frontend</b><span><code>RemoteText</code>, remote value, capture와 procedural DSL의 차이</span></a>
+              <a href="../reference/wiki/document-anatomy-and-state.md"><b>심화 · Document Anatomy</b><span>Header, root operation, ID 기반 state lifecycle</span></a>
+              <a href="../reference/wiki/alpha14-debugging-and-component-issues.md"><b>심화 · alpha14 디버깅</b><span>작은 글꼴, click, server port, input 제한</span></a>
+              <a href="../reference/wiki/remote-compose-poc-retrospective.md"><b>POC 회고와 도입 판단</b><span>custom workaround와 제품 도입 기준</span></a>
+            </div>
+          </section>
+
+          <section>
+            <h2>실제 앱 도입 전에 확인할 것</h2>
+            <label class="check-row"><input type="checkbox" data-check="finish-boundary"><span>Remote 문서와 Android ViewModel/Repository의 책임 경계를 설명할 수 있다.</span></label>
+            <label class="check-row"><input type="checkbox" data-check="finish-security"><span>host action allowlist, 문서 크기 제한, malformed document fallback이 필요함을 안다.</span></label>
+            <label class="check-row"><input type="checkbox" data-check="finish-alpha"><span>procedural DSL과 player가 restricted alpha API임을 제품 위험으로 기록했다.</span></label>
+            <label class="check-row"><input type="checkbox" data-check="finish-accessibility"><span>접근성, 여러 앱 버전 호환성, rollback을 별도로 검증해야 함을 안다.</span></label>
+          </section>
+
+          <div class="finish-panel">
+            <p>REMOTE COMPOSE · SERVER SDUI PATH</p>
+            <h2>완료했습니다</h2>
+            <p>이제 “Ktor 서버가 RcScope로 UI 문서를 만들고, Android 앱이 안전하게 재생하며, 기존 business layer가 실제 작업을 수행한다”는 흐름을 설명할 수 있습니다.</p>
+            <button id="reset-progress" type="button">진행 상태 초기화</button>
+          </div>
+        </article>
+
+        <nav class="lesson-navigation" aria-label="단계 이동">
+          <button id="previous-step" class="nav-button secondary" type="button"><span>이전</span><b id="previous-label">첫 단계</b></button>
+          <button id="complete-step" class="complete-button" type="button">이 단계 완료</button>
+          <button id="next-step" class="nav-button primary" type="button"><span>다음</span><b id="next-label">SDUI 이해하기</b></button>
+        </nav>
+      </div>
+      <footer class="site-footer"><p>학습용 저장소 문서 · AndroidX Remote Compose 1.0.0-alpha14 기준 · 2026-07-13</p></footer>
+    </main>
+  </div>
+</body>
+</html>

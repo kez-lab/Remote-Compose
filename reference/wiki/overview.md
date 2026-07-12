@@ -2,10 +2,11 @@
 title: Remote Compose Overview
 type: synthesis
 created: 2026-07-10
-updated: 2026-07-11
-as_of: 2026-07-11
+updated: 2026-07-13
+as_of: 2026-07-12
 confidence: high
 sources:
+  - ../raw/androidx-remote-compose-official-2026-07-12.md
   - ../raw/remote-sdui-poc-2026-07-11.md
   - ../raw/compose-remote-alpha14-debugging-2026-07-11.md
 ---
@@ -30,7 +31,7 @@ AndroidX Remote Compose는 UI를 binary operation document로 기록하고 Andro
 
 ## 현재 상태
 
-| 항목 | 2026-07-11 판단 |
+| 항목 | 2026-07-12 판단 |
 |---|---|
 | Remote Compose | `1.0.0-alpha14`, stable/beta 없음 |
 | JVM producer | 가능하지만 procedural DSL과 `createRcBuffer`가 restricted |
@@ -45,10 +46,11 @@ AndroidX Remote Compose는 UI를 binary operation document로 기록하고 Andro
 3. 앱이 size와 parser limit을 검증하고 last-known-good를 유지한다.
 4. embedded player가 document-local state와 layout을 평가한다.
 5. local action은 player 안에서 처리한다.
-6. named host action만 Android allowlist를 거쳐 Ktor API를 호출한다.
+6. named host action은 player의 `onNamedAction` callback으로 올라오고, Android router가 typed command로 검증한 뒤 ViewModel이 Ktor API를 호출한다.
 
 ## 이번 POC가 보여 준 난점
 
+- public Compose API의 `RemoteTextUnit`/`rsp` 경로와 restricted procedural `RcSp` 경로를 섞으면 density 결론을 잘못 일반화할 수 있다. `scaledSp`는 후자에서 만든 POC workaround다.
 - density metadata가 빠지면 font와 spacing이 pixel-small하게 보인다.
 - click action 성공과 동적 text 재표시는 별개다.
 - alpha14 POC에서는 `TextLookupInt`, `TextFromFloat`, derived `StateLayout` index가 stale display를 만들었다.
@@ -88,6 +90,9 @@ Remote Compose binary를 공통 UI 계약으로 사용하지 않는다. Ktor가 
 
 ## 다음 읽을 문서
 
+- [Ktor와 RcScope 서버 중심 코드랩 경로](ktor-rcscope-codelab-path.md)
+- [Android Compose 생성 frontend 심화](official-api-learning-path.md)
+- [Document Anatomy와 State Lifecycle](document-anatomy-and-state.md)
 - [Remote Compose POC 회고와 학습 포인트](remote-compose-poc-retrospective.md)
 - [AndroidX Remote Compose](androidx-remote-compose.md)
 - [생태계 비교](ecosystem-map.md)

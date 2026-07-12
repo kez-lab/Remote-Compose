@@ -42,3 +42,20 @@ This repository is a durable, source-backed research base for AndroidX Remote Co
 
 - Architecture recommendations must include failure behavior, compatibility strategy, security boundaries, observability, and rollback.
 - A Remote Compose prototype is not production-ready until it has malformed-document tests, resource limits, fallback UI, accessibility checks, and cross-version verification.
+
+## Beginner documentation rules
+
+1. Declare one producer path before teaching syntax. A Ktor/JVM tutorial must use procedural `RcScope`/`createRcBuffer` throughout its core path; an Android/CI capture tutorial may use public `remote-creation-compose`.
+2. Never call server `RcScope.Text` Jetpack Compose `Text`, and never present it as shorthand for public `RemoteText`.
+3. On first use of `.rs`, `.rb`, `.ri`, `.rf`, `.rdp`, or `.rsp`, state the Kotlin source type, remote target type, serialization purpose, and phase in which the value exists.
+4. Every state example must explain producer/capture execution, emitted document model, player runtime update, and host/server boundary.
+5. State whether a lambda runs during capture or playback. Do not imply that `RemoteStateLayout` content lambdas execute on player clicks.
+6. Compare Jetpack Compose recomposition with Remote Compose ID/listener evaluation before introducing state APIs.
+7. Label code as compile-oriented public API, abbreviated public pattern, restricted POC, or pseudocode. Omitted imports, helpers, or suspend context must be visible beside the block.
+8. A source badge is not an explanation. Each API must answer why it exists, what document value/operation it represents, and what it does not do.
+9. When an error or confusing omission is found, update `reference/wiki/api-syntax-audit.md`, affected synthesis, index when materially repurposed, and append the log.
+10. Do not introduce a second creation frontend merely to be comprehensive. Put `RemoteText`, `.rs/.rb`, and public capture in an advanced module when the core tutorial targets server-side `RcScope` generation.
+11. A server-path beginner must be able to explain `RcScope.Text`, Header/root content, `remoteNamedInteger`, `StateLayout`, `setValue`, `hostAction`, Ktor transport, and the ViewModel/Repository boundary before comparing frontends.
+12. Explain that `createRcBuffer` automatically records the root wrapper; do not call the first content layout the document root. Mention `createRawRcBuffer` only in protocol-level material.
+13. Procedural `StateLayout` examples must use layout-manager children such as `Box` or `Column`, and player snippets must include every required alpha signature argument.
+14. Compile public Compose documentation snippets in `docs-api-fixture`; run `scripts/audit_docs.py` before publishing the Codelab.

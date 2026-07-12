@@ -31,4 +31,5 @@ plugins {
 
 rootProject.name = "RemoteStateLab"
 include(":app")
-include(":server")
+include(":docs-api-fixture")
+includeBuild("server")

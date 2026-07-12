@@ -2,10 +2,11 @@
 title: Remote Compose POC 회고와 학습 포인트
 type: synthesis
 created: 2026-07-11
-updated: 2026-07-11
-as_of: 2026-07-11
+updated: 2026-07-13
+as_of: 2026-07-13
 confidence: high
 sources:
+  - ../raw/androidx-remote-compose-official-2026-07-12.md
   - ../raw/official-sources-2026-07-10.md
   - ../raw/remote-sdui-poc-2026-07-11.md
   - ../raw/compose-remote-alpha14-debugging-2026-07-11.md
@@ -161,18 +162,73 @@ when (screen) {
 
 ## 서버 UI 코드에서 API 요청도 할 수 있는가?
 
-직접적인 의미에서는 아니다.
+기능 관점에서는 **host action이 API 작업을 시작시킨다**고 말할 수 있다. 그러나 `hostAction("task.create")` operation 자체가 HTTP 요청을 보내는 것은 아니다. 이것은 player가 Android host에 전달하는 named event이며, endpoint·method·coroutine은 앱 코드가 결정한다.
 
-Remote Compose document가 임의 URL로 Ktor 요청을 보내거나 Android의 suspend 함수를 실행하게 만들지 않았다. 문서는 `task.create` 또는 `task.delete.<id>` intent만 발생시킨다. Android 앱은 정확한 create 이름과 양의 정수 delete ID를 검증한 뒤 API를 호출한다.
+```mermaid
+sequenceDiagram
+    participant D as "Remote document"
+    participant P as "RemoteDocumentPlayer"
+    participant V as "Android ViewModel"
+    participant R as "HostActionRouter"
+    participant U as "Native UI"
+    participant K as "Ktor server"
 
-```text
-Remote document
-  ├─ hostAction("task.create")
-  │    └─ Android TextField → POST /tasks
-  └─ hostAction("task.delete.42")
-       └─ Android allowlist → DELETE /tasks/42
-            └─ GET /document
+    D->>P: hostAction("task.create")
+    P->>V: onNamedAction → handleHostAction
+    V->>R: commandFor("task.create")
+    R-->>V: CreateTask
+    V->>U: editorVisible = true
+    U->>V: submit(title)
+    V->>K: POST /tasks
+    K-->>V: success
+    V->>K: GET /document
 ```
+
+실제 callback 연결은 다음과 같다.
+
+```kotlin
+// RemoteSduiScreen.kt
+RemoteDocumentPlayer(
+  document = document,
+  documentWidth = 390,
+  documentHeight = 720,
+  onNamedAction = { name, value, _ -> onHostAction(name, value) },
+)
+
+// MainActivity.kt
+RemoteSduiScreen(
+  onHostAction = viewModel::handleHostAction,
+)
+```
+
+`RemoteSduiViewModel.handleHostAction`은 문자열을 바로 URL로 사용하지 않는다. 먼저 `HostActionRouter.commandFor(name)`을 호출한다.
+
+```kotlin
+when {
+  name == "task.create" -> CreateTask
+  name.startsWith("task.delete.") ->
+    name.removePrefix("task.delete.")
+      .toIntOrNull()
+      ?.takeIf { it > 0 }
+      ?.let(::DeleteTask)
+  else -> null
+}
+```
+
+create와 delete는 이후 흐름도 다르다.
+
+| action | router 결과 | API가 실제 실행되는 시점 |
+|---|---|---|
+| `task.create` | `CreateTask` | 먼저 native TextField를 열고, 사용자 submit과 validation이 끝난 뒤 `viewModelScope.launch`에서 `POST /tasks` |
+| `task.delete.42` | `DeleteTask(42)` | 양의 정수 ID 검증 직후 `viewModelScope.launch`에서 `DELETE /tasks/42` |
+| unknown/invalid | `null` | 실행하지 않고 error state 표시 |
+
+두 mutation 모두 성공하면 ViewModel의 `fetchDocument()`가 `GET /document`를 실행해 새 binary document로 교체한다. alpha14 procedural `hostAction`은 이 POC에서 action 이름만 전달하므로 delete ID는 이름 suffix에 넣었고 `onNamedAction`의 `value`와 `StateUpdater`는 사용하지 않았다.
+
+정리하면 다음 두 문장은 동시에 맞다.
+
+- 제품 동작: Remote 화면의 host action이 Android를 거쳐 API 작업을 시작시킨다.
+- 기술 경계: Remote document는 URL·HTTP method·Ktor client·suspend function을 소유하지 않고 command 이름만 host callback으로 전달한다.
 
 이 구조는 불편해 보이지만 중요한 보안 경계다. 서버가 내려보낸 문서가 임의의 Activity, URL, 권한 기능을 호출할 수 있다면 remote UI는 사실상 원격 코드 실행 계층에 가까워진다. Host 앱은 다음을 계속 소유해야 한다.
 
@@ -208,6 +264,8 @@ dependency는 Google Maven에서 받을 수 있었지만, `RemoteDocumentPlayer`
 
 ### 3. `scaledSp`가 필요해질 때까지의 density 트러블슈팅
 
+먼저 경계를 분명히 해야 한다. 아래 문제와 helper는 public `remote-creation-compose`의 `RemoteTextUnit`/`Int.rsp` 경로가 아니라, Ktor/JVM에서 사용한 restricted procedural `RcScope`/`RcSp` 경로의 관찰이다. alpha14 public Compose API의 `RemoteTextUnit`은 `RemoteDensity`와 비선형 font scale 변환을 제공하므로 공식 학습 예제에는 별도 `scaledSp`를 사용하지 않는다. 기본 capture는 생성 환경의 density와 font scale을 사용하지만, 호출자가 `RemoteDensity.Host`를 전달하면 player의 system density/font-size 표현을 참조하도록 만들 수도 있다. 어느 방식을 쓰든 실제 대상 기기의 font-scale 검증은 필요하다.
+
 실제 기기에서 가장 먼저 보인 증상은 **Remote 화면의 글자가 native 연결 화면보다 지나치게 작은 것**이었다. 단순히 font 숫자를 키우는 것으로 시작했지만 padding, row 높이, 글자가 서로 다른 비율로 바뀌어 일부 설명이 잘리는 새 문제가 생겼다.
 
 | 단계 | 관찰과 시도 | 판정 |
@@ -219,35 +277,39 @@ dependency는 Google Maven에서 받을 수 있었지만, `RemoteDocumentPlayer`
 | 5. source와 runtime 대조 | text font size는 raw 값에 가깝게 전달되고 exact dimension도 자동 density 배율을 받지 않는 경로를 확인했다 | font와 fixed dimension을 명시적으로 보정해야 했다 |
 | 6. system density 사용 | player의 `density()`를 font와 exact size 계산에 사용했다 | 1080×2400 emulator에서 native 화면과 비슷한 체감 크기와 정상 row 배치를 확인했다 |
 
-그래서 최종 문서 builder에 다음 helper를 만들었다.
+그래서 최종 문서 builder는 Kotlin context parameter로 `RcFloat` density를 제공하고, 정수 design size가 extension property로 density expression을 만들게 했다.
 
 ```kotlin
-private fun scaledSp(density: RcFloat, value: Float): RcSp =
-  RcSp((density * value).toFloat())
+context(density: RcFloat)
+private val Int.scaledSp: RcSp
+  get() = RcSp((density * toFloat()).toFloat())
+
+context(density: RcFloat)
+private val Int.scaledSize: RcFloat
+  get() = (density * toFloat()).flush()
 ```
 
-이 함수의 목적은 단순히 `Float`를 `RcSp`로 포장하는 것이 아니다.
+이 property의 목적은 단순히 `Float`를 `RcSp`로 포장하는 것이 아니다.
 
-1. `density`는 서버 JVM의 density가 아니라 **문서를 재생하는 player가 제공하는 system value**다.
-2. `density * value`는 서버에서 즉시 계산되는 일반 `Float`가 아니라 Remote Compose expression이다.
+1. context에 전달하는 `density()`는 서버 JVM의 density가 아니라 **문서를 재생하는 player가 제공하는 system value**다.
+2. `density * toFloat()`는 서버에서 즉시 계산되는 일반 `Float`가 아니라 Remote Compose expression이다.
 3. 그 expression 참조를 `RcSp`로 넘기면 player가 실행 시점의 density로 실제 font size를 계산한다.
-4. 따라서 `scaledSp(density, 18f)`는 이번 POC 환경에서 Android의 `18.sp`와 가까운 체감 크기를 만들기 위한 명시적 보정이다.
+4. 따라서 `18.scaledSp`는 이번 POC 환경에서 Android의 `18.sp`와 가까운 체감 크기를 만들기 위한 명시적 보정이다.
 
-사용부는 다음처럼 모든 typography token을 한곳에서 만든다.
+초기에는 모든 값을 `ChecklistMetrics`에 모았지만 작은 POC에서 의미가 사용 위치와 멀어지고 인자 전달만 늘었다. 최종 구현은 이 class를 제거하고 각 화면에서 크기를 바로 선언한다.
 
 ```kotlin
-val density = density()
-val metrics = Metrics(
-  eyebrow = scaledSp(density, 14f),
-  title = scaledSp(density, 38f),
-  body = scaledSp(density, 17f),
-  taskTitle = scaledSp(density, 18f),
-)
-
-val rowHeight = (density * 76f).flush()
+private fun RcScope.TaskRow(...) = context(density()) {
+  Row(modifier = Modifier.height(76.scaledSize)) {
+    Text(task.title, fontSize = 18.scaledSp)
+    ActionButton(fontSize = 17.scaledSp, ...)
+  }
+}
 ```
 
-fixed dimension에는 `RcFloat` expression을 사용하고 `flush()`해서 중간 expression을 문서에 materialize했다. 긴 expression serialization 제한을 피하고 여러 modifier에서 안정적으로 재사용하기 위해서다.
+위 예시의 실제 context는 `context(density())`다. 처음에는 `RcScope` 자체를 context로 제공했지만 Kotlin compiler가 동일 타입의 implicit Remote Compose DSL receiver를 shadow해 `Column`과 `Row` 호출을 거부했다. context를 실제로 필요한 `RcFloat` 하나로 좁히자 DSL receiver 충돌 없이 컴파일됐다.
+
+fixed dimension에는 `RcFloat` expression을 사용하고 `flush()`해서 중간 expression을 문서에 materialize했다. 이 문법을 위해 server build에 `-Xcontext-parameters`를 활성화했다. context parameter는 Kotlin 2.3.20에서 experimental이지만, 이미 restricted alpha API를 평가하는 POC이므로 반복되는 density parameter와 불필요한 metrics DTO를 제거하고 Kotlin DSL 적합성까지 함께 검증하는 선택을 했다.
 
 중요한 한계도 있다. 이 helper는 **POC에서 관찰한 density 불일치를 보정한 workaround**이지, Android Compose의 `sp`와 font scale semantics가 완전히 동일하다는 보장이 아니다. 특히 사용자의 글꼴 크기 설정, 비선형 font scaling, mdpi/xhdpi/xxhdpi 조합은 아직 검증하지 못했다. production 판단 전에는 이 helper를 전제로 고정하지 말고 다음 alpha의 unit 처리와 font-scale matrix를 다시 확인해야 한다.
 
@@ -384,7 +446,7 @@ alpha14 procedural DSL/source에서는 일반 앱 TextField에 해당하는 IME 
 
 ### Q. 화면에서 API 요청도 가능한가?
 
-문서가 직접 임의 요청을 보내게 하지 않았다. named action을 Android host에 전달하고 allowlist된 action만 Ktor API로 연결했다.
+가능하지만 간접적이다. 문서의 `hostAction(name)`이 player의 `onNamedAction` callback을 호출하고, Android `HostActionRouter`가 허용된 command로 변환한 뒤 ViewModel이 Ktor API를 호출한다. 문서 자체가 URL이나 HTTP method를 결정하지는 않는다.
 
 ### Q. 그럼 JSON SDUI보다 좋은가?
 
