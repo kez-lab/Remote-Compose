@@ -2,7 +2,7 @@
 title: Open Questions
 type: question
 created: 2026-07-10
-updated: 2026-07-12
+updated: 2026-07-13
 as_of: 2026-07-12
 ---
 
@@ -51,7 +51,7 @@ as_of: 2026-07-12
 - font scale, RTL, locale, screen reader의 release gate는?
 - state 값과 rendered text/semantics 일치를 어떻게 자동 검증하는가?
 - custom SDUI renderer와의 비교 기준과 승인자는 누구인가?
-- Codelab의 public Compose code block을 실제 alpha artifact로 compile하고 player golden까지 검증하는 fixture를 어느 module에 둘 것인가?
+- `docs-api-fixture`로 public Compose code block compile은 검증했다. 같은 document를 실제 player golden으로 비교하는 테스트를 어느 module에 둘 것인가?
 
 ## 갱신 트리거
 

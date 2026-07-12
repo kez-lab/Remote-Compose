@@ -56,3 +56,6 @@ This repository is a durable, source-backed research base for AndroidX Remote Co
 9. When an error or confusing omission is found, update `reference/wiki/api-syntax-audit.md`, affected synthesis, index when materially repurposed, and append the log.
 10. Do not introduce a second creation frontend merely to be comprehensive. Put `RemoteText`, `.rs/.rb`, and public capture in an advanced module when the core tutorial targets server-side `RcScope` generation.
 11. A server-path beginner must be able to explain `RcScope.Text`, Header/root content, `remoteNamedInteger`, `StateLayout`, `setValue`, `hostAction`, Ktor transport, and the ViewModel/Repository boundary before comparing frontends.
+12. Explain that `createRcBuffer` automatically records the root wrapper; do not call the first content layout the document root. Mention `createRawRcBuffer` only in protocol-level material.
+13. Procedural `StateLayout` examples must use layout-manager children such as `Box` or `Column`, and player snippets must include every required alpha signature argument.
+14. Compile public Compose documentation snippets in `docs-api-fixture`; run `scripts/audit_docs.py` before publishing the Codelab.

@@ -169,3 +169,16 @@ updated: 2026-07-12
 - Source: `samples/remote-state-lab/server/ChecklistDocument.kt`, `Server.kt`, alpha14 pinned procedural/player source, 기존 API 문법 감사
 - Action: public Compose frontend를 공식이라는 이유만으로 beginner 본문에 먼저 배치해 실제 POC 경로를 흐리던 구조를 정정했다. 본편의 UI, Header, state, 화면 전환, action 예제를 `RcScope.Text`, `createRcBuffer`, `remoteNamedInteger`, `StateLayout`, `setValue`, `hostAction(String)`으로 통일했다. `RemoteText`, `.rs/.rb`, `valueChange`, Android capture는 배포 모델이 다른 선택 심화 과정으로 격리했다.
 - Updated: `AGENTS.md`, `codelab/`, `reference/wiki/ktor-rcscope-codelab-path.md`, `reference/wiki/remote-state-and-values.md`, `reference/wiki/official-api-learning-path.md`, `reference/wiki/api-syntax-audit.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-13] lint | Remote Compose 문서와 코드 예제 전문 감사
+
+- Source: AndroidX alpha14 release/API, 배포 source jars, pinned commit `19660b9e1b2fec4a9528fe80ce0a432c0fa2f825`, 실제 sample source
+- Action: 코드랩 명칭, automatic root, procedural StateLayout의 layout-child 요구, RemoteDocumentPlayer 필수 dimensions, 기본/host RemoteDensity 경계를 재검증했다. 5개 설명 오류를 수정하고 public Compose compile fixture와 link/API-boundary 감사 스크립트를 추가했다.
+- Verification: `scripts/audit_docs.py`, `:docs-api-fixture:compileDebugKotlin`, app/server build를 배포 gate에 포함했다.
+- Updated: `README.md`, `codelab/`, `samples/remote-state-lab`, `reference/raw/remote-compose-documentation-audit-2026-07-13.md`, `reference/wiki/documentation-audit.md`, affected wiki pages, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-13] deployment | GitHub Pages Codelab workflow
+
+- Source: GitHub Pages custom workflow documentation
+- Action: `configure-pages@v5`, `upload-pages-artifact@v4`, `deploy-pages@v4`로 Codelab, reference, verification screenshots를 정적 artifact로 배포하는 workflow를 추가했다. root URL은 `/codelab/`로 이동한다.
+- Updated: `.github/workflows/pages.yml`, `site/index.html`, `README.md`, `reference/wiki/log.md`.

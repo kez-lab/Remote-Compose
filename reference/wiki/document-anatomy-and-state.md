@@ -2,8 +2,8 @@
 title: Remote Compose Document Anatomy와 State Lifecycle
 type: concept
 created: 2026-07-12
-updated: 2026-07-12
-as_of: 2026-07-12
+updated: 2026-07-13
+as_of: 2026-07-13
 confidence: high
 sources:
   - ../raw/remote-compose-document-anatomy-2026-07-12.md
@@ -12,7 +12,7 @@ sources:
 
 # Remote Compose Document Anatomy와 State Lifecycle
 
-이 페이지는 public Compose API로 첫 화면과 state/action 흐름을 익힌 뒤 읽는 심화 자료다. 여기서는 각 API가 어떤 document operation을 만드는지, 생성 단계와 player runtime의 state가 어떻게 분리되는지 분석한다.
+이 페이지는 서버 중심 코드랩 또는 public Compose capture 경로에서 첫 화면과 state/action 흐름을 익힌 뒤 읽는 심화 자료다. 여기서는 각 API가 어떤 document operation을 만드는지, 생성 단계와 player runtime의 state가 어떻게 분리되는지 분석한다.
 
 ## 전체 그림
 

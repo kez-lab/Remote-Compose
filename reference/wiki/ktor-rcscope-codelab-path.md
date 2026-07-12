@@ -48,7 +48,7 @@ Ktor/JVM server
 2. 일반 data-driven UI와 server-driven UI의 화면 결정권 차이를 이해한다.
 3. 독립 Ktor server와 Android sample을 실행한다.
 4. 서버의 `RcScope.Column`과 `RcScope.Text`로 첫 UI operation을 기록한다.
-5. Profile, Header, root content가 `createRcBuffer`에서 `ByteArray`가 되는 과정을 배운다.
+5. Profile과 Header, `createRcBuffer`가 자동 생성하는 root, 그 아래 content가 `ByteArray`가 되는 과정을 배운다.
 6. `remoteNamedInteger`, `StateLayout`, `setValue`로 document-local state를 바꾼다.
 7. `screen` state와 child index로 목록/상세를 교체하고 Android Navigation과 구분한다.
 8. `hostAction(String)` → Android callback → ViewModel → Repository/API 경계를 연결한다.

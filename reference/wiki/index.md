@@ -14,6 +14,7 @@ updated: 2026-07-13
 - [Ktor와 RcScope 서버 중심 SDUI 학습 경로](ktor-rcscope-codelab-path.md) — HTML 코드랩의 기준 경로; 서버 UI 작성, Header·ByteArray, procedural state, hostAction, Android business 경계를 한 흐름으로 고정
 - [Android Compose 생성 frontend 심화](official-api-learning-path.md) — Android/CI capture를 선택할 때 배우는 `RemoteText`, remote value, public authoring API
 - [API 문법과 예제 감사](api-syntax-audit.md) — `.rs`·`.rb`·`.ri`, `valueChange`, suspend capture, public/procedural 예제를 alpha14 AAR와 고정 source로 재검증한 결과
+- [문서 전문 감사](documentation-audit.md) — root, StateLayout child, player 필수 인자, density 설명을 artifact/source와 compile fixture로 재검증한 최신 유지보수 결과
 - [Frontend, Remote Value, State 실행 모델](remote-state-and-values.md) — 선택 심화; Android Compose capture의 `RemoteText`·`.rs/.rb`와 서버 `RcScope.Text`의 차이
 - [Document Anatomy와 State Lifecycle](document-anatomy-and-state.md) — Header, RootLayout, flat operation, runtime state ID, StateLayout 평가 과정
 - [생태계 비교](ecosystem-map.md) — Jetpack Compose, CMP, Remote Compose, custom SDUI 비교
@@ -38,6 +39,7 @@ updated: 2026-07-13
 
 ## 원자료
 
+- [문서 전문 감사 근거 2026-07-13](../raw/remote-compose-documentation-audit-2026-07-13.md) — 배포 source checksum, 발견 오류, 수정 근거와 자동 회귀 검사
 - [alpha14 API 문법 감사 2026-07-12](../raw/remote-compose-api-syntax-audit-2026-07-12.md) — 배포 AAR bytecode, pinned signature, Android API reference 모순과 Codelab 정정 근거
 - [Document 구조와 state 근거 2026-07-12](../raw/remote-compose-document-anatomy-2026-07-12.md) — Header property, RootLayout nesting, parse/inflate, runtime state source 분석
 - [공식 근거 스냅샷 2026-07-12](../raw/androidx-remote-compose-official-2026-07-12.md) — alpha14 release·API signature·고정 source·sample·public/restricted 경계 재검증

@@ -248,7 +248,7 @@
               <i>→</i>
               <div><span>2</span><b>Header</b><small>크기·density·설명</small></div>
               <i>→</i>
-              <div><span>3</span><b>Root UI</b><small><code>Column</code>과 child</small></div>
+              <div><span>3</span><b>자동 Root + UI</b><small><code>RootLayoutComponent</code> 아래의 content</small></div>
               <i>→</i>
               <div><span>4</span><b>Buffer</b><small><code>ByteArray</code></small></div>
             </div>
@@ -275,7 +275,7 @@
             <ol class="numbered-process">
               <li><span>1</span><div><b><code>rcProfile</code></b><p>writer와 player가 어떤 Remote Compose profile을 전제로 하는지 정합니다.</p></div></li>
               <li><span>2</span><div><b><code>Header.*</code></b><p>문서 viewport와 density behavior 같은 해석 조건을 기록합니다.</p></div></li>
-              <li><span>3</span><div><b><code>{ TaskListContent() }</code></b><p>이 block이 root UI content입니다. 실행 결과는 Kotlin 함수가 아니라 layout/text operation입니다.</p></div></li>
+              <li><span>3</span><div><b><code>{ TaskListContent() }</code></b><p><code>createRcBuffer</code>가 자동으로 <code>RootLayoutComponent</code>를 기록하고, 이 block의 layout/text operation을 그 아래에 넣습니다.</p></div></li>
               <li><span>4</span><div><b><code>ByteArray</code></b><p><code>createRcBuffer</code>가 Header와 operation을 전송 가능한 binary document로 반환합니다.</p></div></li>
             </ol>
           </section>
@@ -286,7 +286,8 @@
               <thead><tr><th>용어</th><th>역할</th><th>이 샘플에서 보이는 곳</th></tr></thead>
               <tbody>
                 <tr><td>Header</td><td>문서 전체의 version/property framing</td><td><code>createRcBuffer</code> 인자</td></tr>
-                <tr><td>Root UI</td><td>화면 tree의 최상위 content</td><td>buffer block 안의 첫 layout</td></tr>
+                <tr><td>Root wrapper</td><td>화면 tree의 최상위 <code>RootLayoutComponent</code></td><td><code>createRcBuffer</code>가 자동 생성</td></tr>
+                <tr><td>Root content</td><td>root 아래의 layout·data·action operation</td><td>buffer의 content block</td></tr>
                 <tr><td>Remote state</td><td>Player가 ID로 보관·변경하는 값</td><td>다음 단계의 <code>remoteNamedInteger</code></td></tr>
               </tbody>
             </table></div>
@@ -325,27 +326,22 @@
               <pre><code>val done = remoteNamedInteger("done", 0)
 
 StateLayout(stateIndex = done) {
-    Text(
-        "미완료",
-        modifier = Modifier.onClick {
-            setValue(done, 1)
-        },
-    )
-    Text(
-        "완료",
-        modifier = Modifier.onClick {
-            setValue(done, 0)
-        },
-    )
+    Box(modifier = Modifier.onClick { setValue(done, 1) }) {
+        Text("미완료")
+    }
+    Box(modifier = Modifier.onClick { setValue(done, 0) }) {
+        Text("완료")
+    }
 }</code></pre>
             </div>
             <ol class="state-code-walkthrough">
               <li><span>1</span><div><b><code>remoteNamedInteger("done", 0)</code></b><p>초깃값 0을 가진 document state를 만들고 writer가 사용할 ID를 연결합니다.</p></div></li>
               <li><span>2</span><div><b><code>StateLayout(stateIndex = done)</code></b><p>state 값과 같은 순서의 child 하나를 표시하는 selector operation을 기록합니다.</p></div></li>
-              <li><span>3</span><div><b>첫 번째 child</b><p><code>done = 0</code>일 때 “미완료”를 표시하고, click action은 값을 1로 바꿉니다.</p></div></li>
-              <li><span>4</span><div><b>두 번째 child</b><p><code>done = 1</code>일 때 “완료”를 표시하고, click action은 값을 0으로 되돌립니다.</p></div></li>
+              <li><span>3</span><div><b>첫 번째 layout child</b><p><code>done = 0</code>일 때 첫 <code>Box</code>와 “미완료”를 표시하고, click action은 값을 1로 바꿉니다.</p></div></li>
+              <li><span>4</span><div><b>두 번째 layout child</b><p><code>done = 1</code>일 때 두 번째 <code>Box</code>와 “완료”를 표시하고, click action은 값을 0으로 되돌립니다.</p></div></li>
             </ol>
             <div class="callout callout-note"><span>핵심</span><div><b><code>onClick</code> block은 임의의 서버 로직이 아닙니다</b><p>문서 생성 중 <code>setValue</code> action을 기록하는 DSL block입니다. 재생 중 click에서 Ktor의 이 Kotlin block이 실행되는 것이 아닙니다.</p></div></div>
+            <div class="callout callout-warning"><span>!</span><div><b><code>StateLayout</code>에는 layout child를 넣습니다</b><p>alpha14 player의 <code>StateLayout.getLayout(index)</code>는 <code>LayoutManager</code> child를 선택합니다. 따라서 <code>Text</code>를 바로 나열하지 않고 각 상태를 <code>Box</code>, <code>Column</code> 같은 layout으로 감쌉니다.</p></div></div>
           </section>
 
           <section>
@@ -353,8 +349,8 @@ StateLayout(stateIndex = done) {
             <div class="document-state-model" aria-label="procedural 토글 예제가 생성한 문서의 단순화 모델">
               <div><span>STATE</span><b>NamedInt <code>#42 = 0</code></b><small>이름은 done</small></div>
               <div><span>SELECTOR</span><b>StateLayout <code>indexId = #42</code></b><small>현재 값과 같은 child만 표시</small></div>
-              <div><span>CHILD 0</span><b>“미완료”</b><small>click → set <code>#42 = 1</code></small></div>
-              <div><span>CHILD 1</span><b>“완료”</b><small>click → set <code>#42 = 0</code></small></div>
+              <div><span>LAYOUT 0</span><b>Box → “미완료”</b><small>click → set <code>#42 = 1</code></small></div>
+              <div><span>LAYOUT 1</span><b>Box → “완료”</b><small>click → set <code>#42 = 0</code></small></div>
             </div>
             <p class="caption">ID <code>#42</code>는 이해를 위한 예시입니다. 실제 ID는 writer가 문서를 만들며 할당합니다.</p>
           </section>
@@ -502,13 +498,15 @@ ActionButton(label = "삭제") {
               <div class="code-toolbar"><span class="evidence-badge custom">저장소 POC · host integration</span><button class="copy-button" type="button">코드 복사</button></div>
               <pre><code>RemoteDocumentPlayer(
     document = document,
+    documentWidth = 390,
+    documentHeight = 720,
     onNamedAction = { name, value, _ ->
         viewModel.handleHostAction(name, value)
     },
 )</code></pre>
             </div>
             <div class="callout callout-danger"><span>!</span><div><b>문서 문자열을 URL이나 함수처럼 실행하지 마세요</b><p><code>task.create</code>와 양의 정수 ID를 가진 <code>task.delete.&lt;id&gt;</code>처럼 앱이 아는 command만 허용하고 payload를 검증해야 합니다.</p></div></div>
-            <p class="caption"><code>RemoteDocumentPlayer</code>도 alpha14 고정 source 기준 restricted API입니다. 이 코드는 저장소 POC의 실제 경계를 보여 주며 안정 public player 계약이 아닙니다.</p>
+            <p class="caption"><code>documentWidth</code>와 <code>documentHeight</code>는 alpha14 signature의 필수 인자입니다. <code>RemoteDocumentPlayer</code> 자체도 고정 source 기준 restricted이므로 안정 public player 계약으로 제시하지 않습니다.</p>
           </section>
 
           <section>

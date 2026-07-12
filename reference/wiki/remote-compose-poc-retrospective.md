@@ -2,8 +2,8 @@
 title: Remote Compose POC 회고와 학습 포인트
 type: synthesis
 created: 2026-07-11
-updated: 2026-07-12
-as_of: 2026-07-12
+updated: 2026-07-13
+as_of: 2026-07-13
 confidence: high
 sources:
   - ../raw/androidx-remote-compose-official-2026-07-12.md
@@ -190,6 +190,8 @@ sequenceDiagram
 // RemoteSduiScreen.kt
 RemoteDocumentPlayer(
   document = document,
+  documentWidth = 390,
+  documentHeight = 720,
   onNamedAction = { name, value, _ -> onHostAction(name, value) },
 )
 
@@ -262,7 +264,7 @@ dependency는 Google Maven에서 받을 수 있었지만, `RemoteDocumentPlayer`
 
 ### 3. `scaledSp`가 필요해질 때까지의 density 트러블슈팅
 
-먼저 경계를 분명히 해야 한다. 아래 문제와 helper는 public `remote-creation-compose`의 `RemoteTextUnit`/`Int.rsp` 경로가 아니라, Ktor/JVM에서 사용한 restricted procedural `RcScope`/`RcSp` 경로의 관찰이다. alpha14 public Compose API의 `RemoteTextUnit`은 `RemoteDensity`와 비선형 font scale 변환을 제공하므로 공식 학습 예제에는 별도 `scaledSp`를 사용하지 않는다. 그러나 public `RemoteText`도 생성 환경의 density와 font scale을 기준으로 pixel 값을 정하므로, player 기기의 `sp`와 동일하게 자동 적응한다는 뜻은 아니다.
+먼저 경계를 분명히 해야 한다. 아래 문제와 helper는 public `remote-creation-compose`의 `RemoteTextUnit`/`Int.rsp` 경로가 아니라, Ktor/JVM에서 사용한 restricted procedural `RcScope`/`RcSp` 경로의 관찰이다. alpha14 public Compose API의 `RemoteTextUnit`은 `RemoteDensity`와 비선형 font scale 변환을 제공하므로 공식 학습 예제에는 별도 `scaledSp`를 사용하지 않는다. 기본 capture는 생성 환경의 density와 font scale을 사용하지만, 호출자가 `RemoteDensity.Host`를 전달하면 player의 system density/font-size 표현을 참조하도록 만들 수도 있다. 어느 방식을 쓰든 실제 대상 기기의 font-scale 검증은 필요하다.
 
 실제 기기에서 가장 먼저 보인 증상은 **Remote 화면의 글자가 native 연결 화면보다 지나치게 작은 것**이었다. 단순히 font 숫자를 키우는 것으로 시작했지만 padding, row 높이, 글자가 서로 다른 비율로 바뀌어 일부 설명이 잘리는 새 문제가 생겼다.
 

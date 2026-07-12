@@ -197,7 +197,7 @@ RemoteSpacer(RemoteModifier.size(12.rdp))
 
 `RemoteTextUnit`은 `RemoteDensity`와 비선형 font scale 변환을 사용한다. alpha14에서는 `RemoteDensityBehavior.Dp`도 public이다.
 
-다만 `RemoteText`의 density-dependent 값은 player 기기가 아니라 document 생성 환경의 `RemoteDensity`와 font scale을 기준으로 pixel 값으로 변환된다. `18.rsp`를 썼다는 사실만으로 모든 재생 기기에서 Android `18.sp`와 동일하게 보인다고 가정할 수 없다.
+기본 `captureSingleRemoteDocument`는 creation display info의 density와 font scale로 `RemoteDensity`를 만든다. 반면 `remoteDensity = RemoteDensity.Host`를 명시하면 player의 system density와 font-size expression을 참조한다. `18.rsp`만 보고 capture-time 고정인지 host-adaptive인지 판단할 수 없으므로 capture 인자와 대상 기기 검증을 함께 남긴다.
 
 POC 전용 helper:
 

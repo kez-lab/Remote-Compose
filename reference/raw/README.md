@@ -12,6 +12,7 @@
 
 ## 스냅샷
 
+- [2026-07-13 문서 전문 감사 근거](remote-compose-documentation-audit-2026-07-13.md)
 - [2026-07-12 alpha14 API 문법과 예제 감사](remote-compose-api-syntax-audit-2026-07-12.md)
 - [2026-07-12 document 구조와 runtime state 공식 근거](remote-compose-document-anatomy-2026-07-12.md)
 - [2026-07-12 AndroidX Remote Compose 공식 근거](androidx-remote-compose-official-2026-07-12.md)

@@ -76,6 +76,8 @@ player와 Android를 연결하는 실제 callback은 다음 한 줄이다.
 ```kotlin
 RemoteDocumentPlayer(
   document = document,
+  documentWidth = 390,
+  documentHeight = 720,
   onNamedAction = { name, value, _ -> onHostAction(name, value) },
 )
 ```

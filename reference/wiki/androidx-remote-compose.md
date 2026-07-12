@@ -3,7 +3,7 @@ title: AndroidX Remote Compose
 type: concept
 created: 2026-07-10
 updated: 2026-07-13
-as_of: 2026-07-12
+as_of: 2026-07-13
 confidence: high
 sources:
   - ../raw/remote-compose-api-syntax-audit-2026-07-12.md
@@ -75,7 +75,7 @@ Header property, RootLayout nesting, flat list inflate와 runtime state ID lifec
 
 이 capture API는 Android `Context`를 요구한다. Ktor/JVM 서버가 사용하는 restricted procedural `RcScope`/`createRcBuffer` 경로와 같은 API가 아니다.
 
-공식 remote type 변환은 `24.rdp`, `18.rsp`, `1f.rf`, `"text".rs`, `true.rb`다. alpha14의 `RemoteTextUnit`은 `RemoteDensity`와 비선형 font scale converter를 사용하므로 public Compose 예제에서 procedural POC의 `scaledSp` helper를 사용하지 않는다. 다만 `RemoteText`의 density-dependent 값은 document 생성 환경을 기준으로 pixel로 정해지므로 재생 기기의 Android `sp`처럼 자동 적응한다고 설명하면 안 된다.
+공식 remote type 변환은 `24.rdp`, `18.rsp`, `1f.rf`, `"text".rs`, `true.rb`다. alpha14의 `RemoteTextUnit`은 `RemoteDensity`와 비선형 font scale converter를 사용하므로 public Compose 예제에서 procedural POC의 `scaledSp` helper를 사용하지 않는다. 기본 capture의 `RemoteDensity`는 생성 display info에서 만들지만, public `RemoteDensity.Host`를 명시하면 player의 system density/font-size expression을 사용할 수 있다. 따라서 `rsp`를 무조건 capture-time 고정값 또는 무조건 host-adaptive라고 일반화하지 말고 전달한 `remoteDensity`를 함께 기록해야 한다.
 
 ## alpha14 아티팩트와 POC 사용
 
