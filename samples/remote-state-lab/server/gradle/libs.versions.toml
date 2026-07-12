@@ -1,0 +1,14 @@
+[versions]
+kotlin = "2.3.20"
+remoteCompose = "1.0.0-alpha14"
+ktor = "3.5.1"
+slf4j = "2.0.17"
+
+[libraries]
+androidx-compose-remote-creation = { module = "androidx.compose.remote:remote-creation", version.ref = "remoteCompose" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

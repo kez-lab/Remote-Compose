@@ -2,7 +2,7 @@
 title: Remote Compose Wiki Log
 type: log
 created: 2026-07-10
-updated: 2026-07-11
+updated: 2026-07-12
 ---
 
 # 변경 로그
@@ -88,3 +88,84 @@ updated: 2026-07-11
 - Source: `reference/wiki/reference-architecture.md`, `reference/wiki/security-reliability.md`, `reference/wiki/testing-and-operations.md`, `reference/wiki/questions.md`, `samples/remote-state-lab`
 - Action: 최종 판단 전에 기존 NavGraph, ViewModel, Repository, domain use case를 유지하면서 Remote Compose player를 adapter로 격리하는 권장 구조를 추가했다. 도입 화면, API·문서 호환성, 상태 소유권, Navigation, host action, offline, 보안, 접근성, 성능, 테스트, rollout에서 공부하고 검증할 항목과 단계별 도입 순서를 정리했다.
 - Updated: `reference/wiki/remote-compose-poc-retrospective.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-11] implementation | Ktor server standalone Gradle build
+
+- Source: `samples/remote-state-lab/server`, `samples/remote-state-lab/settings.gradle.kts`
+- Action: server를 독립 settings, wrapper, version catalog를 가진 standalone Gradle build로 만들고 상위 Android project에서는 composite build로 포함했다. `server/`의 `./gradlew build`와 상위의 `./gradlew :server:build`를 모두 지원한다.
+- Verification: server 디렉터리의 `./gradlew clean build --no-daemon`과 상위의 `./gradlew :server:clean :server:build :app:testDebugUnitTest --no-daemon`이 성공했다.
+- Updated: `samples/remote-state-lab/server`, `samples/remote-state-lab/settings.gradle.kts`, `samples/remote-state-lab/README.md`, `reference/wiki/log.md`.
+
+## [2026-07-11] implementation | Context parameter 기반 Remote size DSL
+
+- Source: `samples/remote-state-lab/server/src/main/kotlin/com/example/remotestatelab/server/ChecklistDocument.kt`, Kotlin 2.3.20 context parameters
+- Action: 반복하던 density 인자를 제거하고 `RcScope` context에서 `18f.scaledSp`, `76f.scaledSize`로 표현하는 extension property를 추가했다. 사용되지 않던 `ActionButton`의 raw `18.rsp` 기본값도 제거해 모든 버튼이 보정된 font token을 명시하도록 했다.
+- Verification: standalone server의 `./gradlew clean build --no-daemon`과 상위 composite의 server clean build, app unit test, debug APK assemble이 성공했다.
+- Updated: `samples/remote-state-lab/server`, `samples/remote-state-lab/README.md`, `reference/wiki/remote-compose-poc-retrospective.md`, `reference/wiki/log.md`.
+
+## [2026-07-11] implementation | ChecklistMetrics 제거와 local size 선언
+
+- Source: `samples/remote-state-lab/server/src/main/kotlin/com/example/remotestatelab/server/ChecklistDocument.kt`
+- Action: 작은 POC에서 값의 의미를 사용 위치와 분리하던 `ChecklistMetrics`를 제거했다. 각 화면이 `RcFloat` density context 안에서 `18.scaledSp`, `76.scaledSize`처럼 font와 component size를 직접 선언하도록 단순화했다. `RcScope` 전체를 context로 사용한 첫 시도는 implicit DSL receiver shadowing으로 컴파일되지 않아 필요한 density 값만 context로 좁혔다.
+- Verification: standalone server clean build와 상위 composite의 server clean build, app unit test, debug APK assemble이 성공했다.
+- Updated: `samples/remote-state-lab/server`, `samples/remote-state-lab/README.md`, `reference/wiki/remote-compose-poc-retrospective.md`, `reference/wiki/log.md`.
+
+## [2026-07-11] maintenance | scaled size DSL과 hostAction API 경로 문서 동기화
+
+- Source: `samples/remote-state-lab/server/src/main/kotlin/com/example/remotestatelab/server/ChecklistDocument.kt`, `samples/remote-state-lab/app/src/main/java/com/example/remotestatelab/remote/RemoteSduiScreen.kt`, `RemoteSduiViewModel.kt`, `HostActionRouter.kt`
+- Action: 모든 현재 문서의 density helper를 `RcFloat` context 기반 `18.scaledSp`/`76.scaledSize` 구현으로 맞췄다. `hostAction`을 막연한 intent로 표현하던 설명을 player `onNamedAction` callback, Android router, ViewModel coroutine, Ktor mutation과 document reload의 실제 호출 경로로 교체하고 create와 delete의 실행 시점 차이를 명시했다.
+- Updated: `samples/remote-state-lab/README.md`, `reference/wiki/sample-sdui-poc.md`, `reference/wiki/remote-compose-poc-retrospective.md`, `reference/wiki/overview.md`, `reference/wiki/androidx-remote-compose.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-12] implementation | Android 개발자용 Remote Compose HTML Codelab
+
+- Source: `samples/remote-state-lab`, `reference/wiki/remote-compose-poc-retrospective.md`, Android 공식 Codelab 정보 구조
+- Action: 처음 Remote Compose를 접하는 Android 개발자가 실행 모델, standalone Ktor producer, binary document, Android player, StateLayout, hostAction API 경계, density 디버깅, production gate를 순서대로 학습하는 9단계 정적 HTML 사이트를 만들었다. 단계 레일, 진행률, 완료·체크 상태 저장, 코드 복사, light/dark theme, 반응형 mobile drawer를 구현했다.
+- Updated: `codelab/`, `README.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-12] ingest | alpha14 공식 API 전체 근거와 학습 경계 재정리
+
+- Source: AndroidX Remote Compose release notes, Google Maven metadata, Android Developers API reference, alpha14 pinned `api/current.txt`, implementation source, integration demos, wire-format documentation
+- Action: `remote-creation-compose` public API, restricted player/procedural DSL, 저장소 POC custom code를 분리해 새 immutable source snapshot과 공식 API 학습 경로를 만들었다. `Int.rsp`와 `RemoteDensityBehavior.Dp`가 공식 density 경로이고 `scaledSp`는 restricted procedural POC workaround라는 점을 명시했다. Android CLI 문서 검색에서는 Remote Compose 일반 API가 색인되지 않아 release/API/source를 우선 근거로 기록했다.
+- Updated: `reference/raw/androidx-remote-compose-official-2026-07-12.md`, `reference/raw/README.md`, `reference/wiki/official-api-learning-path.md`, `reference/wiki/androidx-remote-compose.md`, `reference/wiki/overview.md`, `reference/wiki/remote-compose-poc-retrospective.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-12] implementation | 공식 API 기반 Remote Compose HTML Codelab 재구축
+
+- Source: `reference/raw/androidx-remote-compose-official-2026-07-12.md`, `reference/wiki/official-api-learning-path.md`, Android 공식 Codelab 정보 구조
+- Action: 기존 POC 중심 9단계 사이트를 공식 public API 중심 10단계 Codelab으로 교체했다. 모든 code block을 public/source/restricted/custom으로 분류하고, public Compose 작성·preview·capture·state·StateLayout·hostAction·density 순서 뒤에 restricted Ktor/player POC를 배치했다. 깨지기 쉬운 theme UI를 제거하고 button reset, 명확한 Material 계열 navigation, mobile drawer, keyboard focus, code selection fallback을 다시 구현했다.
+- Updated: `codelab/`, `README.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-12] ingest | Document Header, RootLayout, runtime state lifecycle 보강
+
+- Source: alpha14 pinned `Document Structure`, `Header.java`, `RootLayoutComponent.java`, `CoreDocument.java`, `RemoteComposeBuffer.java`, `RemoteComposeState.java`, public `RemoteState.kt`, `RemoteStateLayout.kt`, `ValueChange.kt`
+- Action: Header의 protocol/version/property framing, RootLayout nesting, flat operation parse/inflate, creation state와 runtime state의 차이, mutable/named/expression state의 ID 할당, listener dirty/repaint, StateLayout의 index selector 동작을 source-backed 문서로 추가했다. 별도 `RootState` operation은 없다는 용어 경계와 document replacement 시 public 자동 restore 계약을 확인하지 못했다는 점을 명시했다.
+- Updated: `reference/raw/remote-compose-document-anatomy-2026-07-12.md`, `reference/raw/README.md`, `reference/wiki/document-anatomy-and-state.md`, `reference/wiki/official-api-learning-path.md`, `reference/wiki/androidx-remote-compose.md`, `reference/wiki/overview.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-12] implementation | Codelab document-first 12단계 확장
+
+- Source: `reference/wiki/document-anatomy-and-state.md`, AndroidX alpha14 pinned source
+- Action: 기존 API 사용 순서 앞에 Document Anatomy와 Runtime State 두 단계를 추가했다. Header field table, operation stack, RootLayout nesting tree, parse/inflate 5단계, root/creation/runtime state 비교, ID listener update flow, document refresh state restore 경고를 시각적으로 학습하도록 구성했다.
+- Updated: `codelab/index.html`, `codelab/styles.css`, `codelab/app.js`, `codelab/README.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.
+
+## [2026-07-12] implementation | SDUI 왕초보 관점의 HTML 실습 전면 재구성
+
+- Source: `reference/raw/androidx-remote-compose-official-2026-07-12.md`, `reference/wiki/official-api-learning-path.md`, `samples/remote-state-lab/raw/verification/2026-07-11-dynamic-task-flow`
+- Action: Header·RootLayout·runtime ID를 선행 지식으로 요구하던 12단계 구성을 제거했다. 실제 완성 화면 → SDUI와 일반 앱 비교 → sample 실행 → public Remote UI → document bytes → local state → 문서 내부 화면 전환 → hostAction과 ViewModel/API 경계 → Ktor bytes transport 순서의 왕초보용 10단계 과정으로 다시 구성했다. Ktor는 공식 Remote Compose 통합이 아닌 저장소 POC이고 document internals는 심화 과정임을 명시했다.
+- Updated: `codelab/index.html`, `codelab/styles.css`, `codelab/app.js`, `codelab/README.md`, `reference/wiki/official-api-learning-path.md`, `reference/wiki/index.md`, `reference/wiki/log.md`
+
+## [2026-07-12] lint | alpha14 API 문법과 Codelab 예제 전수 감사
+
+- Source: alpha14 pinned `api/current.txt`, `RemoteBoolean.kt`, `RemoteString.kt`, `ValueChange.kt`, `RemoteStateLayout.kt`, Android Developers API reference, Google Maven `remote-creation-compose:1.0.0-alpha14` AAR bytecode
+- Action: `.rs`와 `.rb`는 질문의 parameter boundary에서 실제로 필요하고 소문자 `valueChange`가 alpha14 artifact와 일치함을 확인했다. 동시에 suspend capture 문맥 누락, public `RemoteStateLayout`과 procedural POC `StateLayout` 혼합, `rsp`의 creation-time density 경계 누락, helper 생략 예제의 분류 부족, 잘못된 `RemoteText` 링크, anatomy-first 학습 문구를 찾아 정정했다. Android API reference의 대문자 `ValueChange`와 alpha14 artifact의 소문자 `valueChange` 모순을 보존했다.
+- Updated: `reference/raw/remote-compose-api-syntax-audit-2026-07-12.md`, `reference/raw/README.md`, `reference/wiki/api-syntax-audit.md`, `reference/wiki/official-api-learning-path.md`, `reference/wiki/androidx-remote-compose.md`, `reference/wiki/document-anatomy-and-state.md`, `reference/wiki/remote-compose-poc-retrospective.md`, `reference/wiki/questions.md`, `reference/wiki/index.md`, `codelab/index.html`, `codelab/README.md`, `reference/wiki/log.md`
+
+## [2026-07-12] maintenance | 상태 실행 모델과 두 frontend 초보자 설명 보강
+
+- Source: alpha14 pinned `RcScope.kt`, `RemoteStateLayout.kt`, `RemoteBoolean.kt`, 배포 AAR signature, 실제 `ChecklistDocument.kt`
+- Action: 문법 존재 여부만 확인하고 remote value의 목적과 실행 시점을 설명하지 않은 문서 실패를 기록했다. public Compose `RemoteText`와 restricted server `RcScope.Text`가 같은 core document를 만드는 서로 다른 frontend임을 artifact·receiver·type·공개 범위로 비교했다. Kotlin value → remote value → document operation → player state map 흐름, Compose recomposition과 player ID/listener 평가 차이, 토글의 capture 결과, interactive playback lab, 상태 소유권 표를 추가했다. 재발 방지 기준을 `AGENTS.md`에 고정했다.
+- Updated: `AGENTS.md`, `codelab/index.html`, `codelab/styles.css`, `codelab/app.js`, `reference/wiki/remote-state-and-values.md`, `reference/wiki/api-syntax-audit.md`, `reference/wiki/index.md`, `reference/wiki/log.md`
+
+## [2026-07-13] maintenance | HTML 코드랩을 Ktor RcScope 서버 SDUI 단일 경로로 정리
+
+- Source: `samples/remote-state-lab/server/ChecklistDocument.kt`, `Server.kt`, alpha14 pinned procedural/player source, 기존 API 문법 감사
+- Action: public Compose frontend를 공식이라는 이유만으로 beginner 본문에 먼저 배치해 실제 POC 경로를 흐리던 구조를 정정했다. 본편의 UI, Header, state, 화면 전환, action 예제를 `RcScope.Text`, `createRcBuffer`, `remoteNamedInteger`, `StateLayout`, `setValue`, `hostAction(String)`으로 통일했다. `RemoteText`, `.rs/.rb`, `valueChange`, Android capture는 배포 모델이 다른 선택 심화 과정으로 격리했다.
+- Updated: `AGENTS.md`, `codelab/`, `reference/wiki/ktor-rcscope-codelab-path.md`, `reference/wiki/remote-state-and-values.md`, `reference/wiki/official-api-learning-path.md`, `reference/wiki/api-syntax-audit.md`, `reference/wiki/index.md`, `reference/wiki/log.md`.

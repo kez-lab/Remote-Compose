@@ -54,19 +54,70 @@ alpha14 procedural DSL의 component surface에는 `Box`, `Column`, `Row`, `Flow`
 | `task.delete.<id>` | 양의 정수 ID만 허용 | `DELETE /tasks/<id>` | task 삭제, 문서 reload |
 | 그 외 이름 | 거부 | 요청 없음 | error 표시 |
 
-Remote Compose 문서는 임의 HTTP 요청이나 Kotlin suspend 함수를 실행하지 않는다. 문서는 intent를 named action으로 전달하고 Android host가 인증·인가·validation·API 요청을 담당한다.
+기능 관점에서는 host action이 API 작업을 시작시키는 것이 맞다. 다만 `hostAction("task.create")` 자체가 HTTP 요청은 아니다. 문서에 저장된 **named-action event**를 player가 Android callback으로 올리고, 앱 코드가 그 문자열을 command와 Ktor 요청으로 번역한다.
+
+```text
+Remote document click
+  → hostAction("task.create") operation 실행
+  → RemoteDocumentPlayer.onNamedAction("task.create", value, stateUpdater)
+  → RemoteSduiScreen.onHostAction
+  → RemoteSduiViewModel.handleHostAction
+  → HostActionRouter.commandFor("task.create")
+  → CreateTask command
+  → native TextField dialog 표시
+  → 사용자 submit
+  → RemoteSduiViewModel.createTask(title)
+  → Ktor client POST /tasks
+  → 성공 시 GET /document
+```
+
+player와 Android를 연결하는 실제 callback은 다음 한 줄이다.
+
+```kotlin
+RemoteDocumentPlayer(
+  document = document,
+  onNamedAction = { name, value, _ -> onHostAction(name, value) },
+)
+```
+
+`MainActivity`는 이 callback을 `viewModel::handleHostAction`에 연결한다. `HostActionRouter`는 exact `task.create`를 `CreateTask`, 양의 정수 suffix가 있는 `task.delete.<id>`를 `DeleteTask(id)`로 바꾸며 나머지는 거부한다.
+
+create는 입력값이 필요하므로 host action 시점에는 dialog만 연다. 사용자가 제출한 뒤에야 `viewModelScope.launch` 안에서 `POST /tasks`가 실행된다. delete는 ID가 action 이름에 있으므로 router 통과 직후 `DELETE /tasks/{id}`를 실행한다. alpha14 procedural `hostAction`은 이 POC에서 이름만 전달하므로 delete ID를 이름에 넣었고, callback의 `value`와 `StateUpdater`는 사용하지 않았다.
+
+따라서 Remote Compose document가 임의 URL이나 Android suspend 함수를 직접 실행하는 것은 아니다. **서버 문서는 command 이름을 요청하고, Android host가 그 이름을 어떤 UI·UseCase·API에 연결할지 결정한다.**
 
 ## Density 보정
 
 alpha14 procedural DSL의 `fontSize = n.rsp`와 exact `height/width`는 DP header만으로 일관되게 scaling되지 않았다. 현재 문서는 player의 `density()` system value로 font와 fixed dimension을 계산한다.
 
 ```kotlin
-val density = density()
-val title = RcSp((density * 38f).toFloat())
-val rowHeight = (density * 76f).flush()
+context(density: RcFloat)
+private val Int.scaledSp: RcSp
+  get() = RcSp((density * toFloat()).toFloat())
+
+context(density: RcFloat)
+private val Int.scaledSize: RcFloat
+  get() = (density * toFloat()).flush()
+
+context(density()) {
+  Text("작업", fontSize = 18.scaledSp)
+  Modifier.height(76.scaledSize)
+}
 ```
 
+Kotlin `2.3.20`의 experimental context parameter를 POC 범위에서 활성화해 동일한 density를 반복 전달하지 않는다. `RcScope` 자체를 context로 사용하면 Remote Compose DSL receiver를 shadow하므로, 더 좁은 `RcFloat` density만 context로 제공한다. 별도 metrics DTO 없이 각 UI 선언 위치에서 크기를 바로 읽을 수 있으며, `server/build.gradle.kts`는 `-Xcontext-parameters`를 명시한다.
+
 ## 실행
+
+서버는 독립 Gradle project이므로 `server/`에서 Android app을 구성하지 않고 직접 빌드·실행할 수 있다.
+
+```bash
+cd server
+./gradlew build
+./gradlew run
+```
+
+상위 `remote-state-lab`에서는 composite build task 경로도 그대로 사용할 수 있다.
 
 ```bash
 ./gradlew :server:run
@@ -111,6 +162,7 @@ lsof -nP -iTCP:8080 -sTCP:LISTEN
 - `server/.../TaskStore.kt`: server task identity, revision, add/delete
 - `server/.../ChecklistDocument.kt`: 동적 row, scroll, `StateLayout` 상세 화면
 - `server/.../Server.kt`: `GET /document`, `POST /tasks`, `DELETE /tasks/{id}`
+- `server/settings.gradle.kts`: Android app과 분리된 standalone server build
 - `app/.../HostActionRouter.kt`: create/delete action allowlist와 ID validation
 - `app/.../RemoteSduiViewModel.kt`: native input state, Ktor mutation, 자동 document reload
 - `app/.../RemoteSduiScreen.kt`: 연결 화면, embedded player, native task editor dialog

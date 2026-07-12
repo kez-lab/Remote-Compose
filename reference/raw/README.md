@@ -12,6 +12,9 @@
 
 ## 스냅샷
 
+- [2026-07-12 alpha14 API 문법과 예제 감사](remote-compose-api-syntax-audit-2026-07-12.md)
+- [2026-07-12 document 구조와 runtime state 공식 근거](remote-compose-document-anatomy-2026-07-12.md)
+- [2026-07-12 AndroidX Remote Compose 공식 근거](androidx-remote-compose-official-2026-07-12.md)
 - [2026-07-10 공식 소스 목록](official-sources-2026-07-10.md)
 - [2026-07-11 Ktor → Android SDUI POC 증거](remote-sdui-poc-2026-07-11.md)
 - [2026-07-11 SDUI emulator 상태 검증](remote-sdui-emulator-verification-2026-07-11.md)

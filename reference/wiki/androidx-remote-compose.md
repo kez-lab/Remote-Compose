@@ -2,10 +2,13 @@
 title: AndroidX Remote Compose
 type: concept
 created: 2026-07-10
-updated: 2026-07-11
-as_of: 2026-07-11
+updated: 2026-07-13
+as_of: 2026-07-12
 confidence: high
 sources:
+  - ../raw/remote-compose-api-syntax-audit-2026-07-12.md
+  - ../raw/remote-compose-document-anatomy-2026-07-12.md
+  - ../raw/androidx-remote-compose-official-2026-07-12.md
   - ../raw/remote-sdui-poc-2026-07-11.md
   - ../raw/compose-remote-alpha14-debugging-2026-07-11.md
 ---
@@ -46,7 +49,9 @@ Ktor는 전송과 API만 담당한다.
 - producer와 player의 API/profile compatibility가 필요하다.
 - wire 문서는 WIP이므로 장기 공개 표준처럼 취급하지 않는다.
 
-## 작성 API 정신 모델
+Header property, RootLayout nesting, flat list inflate와 runtime state ID lifecycle은 [Document Anatomy와 State Lifecycle](document-anatomy-and-state.md)에 별도로 정리했다. 특히 `RootLayoutComponent`는 UI tree root이며 별도 `RootState` operation은 없다. player 값은 ID 기반 `RemoteComposeState`에 저장된다.
+
+## 공식 public 작성 API 정신 모델
 
 | Jetpack Compose | Remote Compose |
 |---|---|
@@ -58,6 +63,19 @@ Ktor는 전송과 API만 담당한다.
 | local mutable state | remote state/expression |
 
 표준 Compose API를 임의로 capture하는 모델이 아니다. alpha14는 remote composition에서 표준 `CompositionLocal` 사용을 경고하는 lint도 추가했다.
+
+공식 public Compose 생성 경로는 다음 순서다.
+
+```text
+@Composable @RemoteComposable content
+  -> RemoteContentPreview
+  -> captureSingleRemoteDocument / captureRemoteDocument
+  -> CapturedDocument.bytes / Flow<ByteArray>
+```
+
+이 capture API는 Android `Context`를 요구한다. Ktor/JVM 서버가 사용하는 restricted procedural `RcScope`/`createRcBuffer` 경로와 같은 API가 아니다.
+
+공식 remote type 변환은 `24.rdp`, `18.rsp`, `1f.rf`, `"text".rs`, `true.rb`다. alpha14의 `RemoteTextUnit`은 `RemoteDensity`와 비선형 font scale converter를 사용하므로 public Compose 예제에서 procedural POC의 `scaledSp` helper를 사용하지 않는다. 다만 `RemoteText`의 density-dependent 값은 document 생성 환경을 기준으로 pixel로 정해지므로 재생 기기의 Android `sp`처럼 자동 적응한다고 설명하면 안 된다.
 
 ## alpha14 아티팩트와 POC 사용
 
@@ -76,10 +94,13 @@ Ktor는 전송과 API만 담당한다.
 
 Maven artifact가 존재하는 것과 supported public API인 것은 다르다.
 
+특히 `remote-creation-compose`와 `remote-tooling-preview`에는 public signature가 있지만, player 모듈의 `api/current.txt`에는 일반 앱용 public player signature가 없다. `RemoteDocumentPlayer`와 `RemoteComposePlayer`는 alpha14 고정 source에서 `LIBRARY_GROUP` restricted다.
+
 ## 상태와 액션
 
 - document-local action은 remote state를 바꾸며 network가 필요 없다.
-- host action은 Android 앱의 allowlist로 전달한다.
+- `hostAction(name)`은 player의 named-action callback으로 전달되며 그 자체는 HTTP 요청이 아니다.
+- Android 앱이 callback의 name을 allowlist된 typed command로 바꾼 뒤 native UI, navigation 또는 API에 연결한다.
 - 앱이 auth, API request, navigation, retry, analytics를 소유한다.
 - remote action name을 URL, class name, script로 직접 실행하지 않는다.
 
@@ -141,6 +162,9 @@ Go 전제:
 
 ## 공식 근거
 
+- [2026-07-12 공식 근거 스냅샷](../raw/androidx-remote-compose-official-2026-07-12.md)
+- [Ktor와 RcScope 서버 중심 코드랩 경로](ktor-rcscope-codelab-path.md)
+- [Android Compose 생성 frontend 심화](official-api-learning-path.md)
 - [Remote Compose release notes](https://developer.android.com/jetpack/androidx/releases/compose-remote)
 - [RemoteModifier API](https://developer.android.com/reference/kotlin/androidx/compose/remote/creation/compose/modifier/RemoteModifier)
 - [Pinned source](https://android.googlesource.com/platform/frameworks/support/+/19660b9e1b2fec4a9528fe80ce0a432c0fa2f825/compose/remote/)

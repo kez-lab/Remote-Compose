@@ -25,8 +25,8 @@ native connection
   → GET /document
   → Remote Compose list + vertical scroll
       ├─ row → StateLayout detail → list
-      ├─ create intent → native TextField → POST /tasks → reload
-      └─ delete intent → DELETE /tasks/{id} → reload
+      ├─ create named action → native TextField → POST /tasks → reload
+      └─ delete named action → DELETE /tasks/{id} → reload
 ```
 
 ## alpha14 입력 경계
@@ -69,6 +69,28 @@ root `StateLayout`의 direct integer `screen`을 사용한다.
 | `task.delete.<id>` | positive integer suffix | `DELETE /tasks/{id}` |
 
 mutation 성공 후 Android가 `/document`를 자동으로 다시 가져온다. 이전 “서버 동기화” 버튼은 역할이 불분명하고 필요하지 않아 제거했다.
+
+`hostAction`은 API client가 아니라 document에서 host로 보내는 named event다. 연결 과정은 다음과 같다.
+
+```text
+server document의 hostAction(name)
+  → player가 click operation 평가
+  → RemoteDocumentPlayer.onNamedAction(name, value, stateUpdater)
+  → app의 onHostAction callback
+  → RemoteSduiViewModel.handleHostAction(name, value)
+  → HostActionRouter.commandFor(name)
+  → 허용된 command만 native UI 또는 Ktor client로 전달
+```
+
+실제 player adapter는 `onNamedAction = { name, value, _ -> onHostAction(name, value) }`로 연결되고, `MainActivity`가 `onHostAction = viewModel::handleHostAction`을 주입한다.
+
+create와 delete의 실행 시점은 다르다.
+
+1. `task.create`: router가 `CreateTask`로 변환 → ViewModel이 native editor state를 연다 → 사용자 submit과 title validation 뒤 `viewModelScope.launch`에서 `POST /tasks` → 성공 시 `GET /document`.
+2. `task.delete.<id>`: router가 suffix를 양의 정수로 검증해 `DeleteTask(id)`로 변환 → `viewModelScope.launch`에서 `DELETE /tasks/{id}` → 성공 시 `GET /document`.
+3. unknown name 또는 잘못된 ID: router가 `null`을 반환하고 API를 호출하지 않는다.
+
+따라서 “host action으로 API를 요청한다”는 제품 수준 설명은 맞지만, endpoint·HTTP method·coroutine을 결정하는 주체는 Remote document가 아니라 Android host다. 이 POC의 procedural `hostAction`은 이름만 보내므로 delete ID를 문자열 suffix에 포함했고 callback의 `value`와 `StateUpdater`는 사용하지 않았다.
 
 ## 2026-07-11 Android journey
 

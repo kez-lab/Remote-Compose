@@ -25,7 +25,6 @@ import androidx.compose.remote.creation.dsl.fillMaxWidth
 import androidx.compose.remote.creation.dsl.height
 import androidx.compose.remote.creation.dsl.onClick
 import androidx.compose.remote.creation.dsl.padding
-import androidx.compose.remote.creation.dsl.rsp
 import androidx.compose.remote.creation.dsl.verticalScroll
 import androidx.compose.remote.creation.dsl.verticalWeight
 import androidx.compose.remote.creation.dsl.width
@@ -34,24 +33,6 @@ import androidx.compose.remote.creation.profile.Profile
 
 const val DOCUMENT_WIDTH = 390
 const val DOCUMENT_HEIGHT = 720
-
-private data class ChecklistMetrics(
-  val eyebrow: RcSp,
-  val title: RcSp,
-  val body: RcSp,
-  val section: RcSp,
-  val taskTitle: RcSp,
-  val taskDetail: RcSp,
-  val action: RcSp,
-  val footnote: RcSp,
-  val detailTitle: RcSp,
-  val rowHeight: RcFloat,
-  val addHeight: RcFloat,
-  val deleteWidth: RcFloat,
-  val deleteHeight: RcFloat,
-  val backWidth: RcFloat,
-  val backHeight: RcFloat,
-)
 
 private val serverProfile =
   Profile(
@@ -85,34 +66,14 @@ fun buildChecklistDocument(snapshot: ChecklistServerSnapshot): ByteArray =
     ),
   ) {
     val screen = remoteNamedInteger("screen", 0)
-    val density = density()
-    val metrics =
-      ChecklistMetrics(
-        eyebrow = scaledSp(density, 14f),
-        title = scaledSp(density, 38f),
-        body = scaledSp(density, 17f),
-        section = scaledSp(density, 17f),
-        taskTitle = scaledSp(density, 18f),
-        taskDetail = scaledSp(density, 14f),
-        action = scaledSp(density, 17f),
-        footnote = scaledSp(density, 14f),
-        detailTitle = scaledSp(density, 34f),
-        rowHeight = (density * 76f).flush(),
-        addHeight = (density * 64f).flush(),
-        deleteWidth = (density * 68f).flush(),
-        deleteHeight = (density * 48f).flush(),
-        backWidth = (density * 112f).flush(),
-        backHeight = (density * 52f).flush(),
-      )
 
     StateLayout(stateIndex = screen, modifier = Modifier.fillMaxSize()) {
-      TaskListScreen(snapshot = snapshot, screen = screen, metrics = metrics)
+      TaskListScreen(snapshot = snapshot, screen = screen)
       snapshot.tasks.forEach { task ->
         TaskDetailScreen(
           snapshot = snapshot,
           task = task,
           screen = screen,
-          metrics = metrics,
         )
       }
     }
@@ -121,27 +82,26 @@ fun buildChecklistDocument(snapshot: ChecklistServerSnapshot): ByteArray =
 private fun RcScope.TaskListScreen(
   snapshot: ChecklistServerSnapshot,
   screen: androidx.compose.remote.creation.dsl.RcInteger,
-  metrics: ChecklistMetrics,
-) {
+) = context(density()) {
   Column(modifier = Modifier.fillMaxSize().background(Ink).padding(18f)) {
-    Text("REMOTE TASKS  ·  R${snapshot.revision}", color = Lime, fontSize = metrics.eyebrow)
+    Text("REMOTE TASKS  ·  R${snapshot.revision}", color = Lime, fontSize = 14.scaledSp)
     Text(
       "배포 작업",
       modifier = Modifier.padding(top = 7f),
       color = White,
-      fontSize = metrics.title,
+      fontSize = 38.scaledSp,
     )
     Text(
       "${snapshot.tasks.size}개 작업 · Ktor 서버에 저장됨",
       modifier = Modifier.padding(top = 4f),
       color = Mist,
-      fontSize = metrics.body,
+      fontSize = 17.scaledSp,
     )
     Text(
       "작업을 선택하면 상세 화면으로 이동합니다",
       modifier = Modifier.padding(top = 15f, bottom = 5f),
       color = Mist,
-      fontSize = metrics.section,
+      fontSize = 17.scaledSp,
     )
 
     if (snapshot.tasks.isEmpty()) {
@@ -150,7 +110,7 @@ private fun RcScope.TaskListScreen(
         horizontal = RcHorizontalPositioning.Center,
         vertical = RcVerticalPositioning.Center,
       ) {
-        Text("아직 작업이 없습니다", color = Mist, fontSize = metrics.body)
+        Text("아직 작업이 없습니다", color = Mist, fontSize = 17.scaledSp)
       }
     } else {
       Column(
@@ -161,7 +121,6 @@ private fun RcScope.TaskListScreen(
             task = task,
             detailScreenIndex = index + 1,
             screen = screen,
-            metrics = metrics,
           )
         }
       }
@@ -169,10 +128,10 @@ private fun RcScope.TaskListScreen(
 
     ActionButton(
       label = "+  새 작업 작성",
-      modifier = Modifier.fillMaxWidth().height(metrics.addHeight).padding(top = 10f),
+      modifier = Modifier.fillMaxWidth().height(64.scaledSize).padding(top = 10f),
       background = Lime,
       contentColor = Ink,
-      fontSize = metrics.action,
+      fontSize = 17.scaledSp,
     ) {
       hostAction("task.create")
     }
@@ -180,7 +139,7 @@ private fun RcScope.TaskListScreen(
       "텍스트 입력은 Android · 목록과 상세는 Remote Compose",
       modifier = Modifier.padding(top = 8f),
       color = Mist,
-      fontSize = metrics.footnote,
+      fontSize = 14.scaledSp,
     )
   }
 }
@@ -189,12 +148,11 @@ private fun RcScope.TaskRow(
   task: ChecklistTask,
   detailScreenIndex: Int,
   screen: androidx.compose.remote.creation.dsl.RcInteger,
-  metrics: ChecklistMetrics,
-) {
+) = context(density()) {
   Row(
     modifier =
       Modifier.fillMaxWidth()
-        .height(metrics.rowHeight)
+        .height(76.scaledSize)
         .padding(top = 5f)
         .clip(RoundedRectShape(15f, 15f, 15f, 15f))
         .background(Panel)
@@ -208,7 +166,7 @@ private fun RcScope.TaskRow(
       Text(
         task.title,
         color = White,
-        fontSize = metrics.taskTitle,
+        fontSize = 18.scaledSp,
         overflow = RcTextOverflow.Ellipsis,
         maxLines = 1,
       )
@@ -216,17 +174,17 @@ private fun RcScope.TaskRow(
         "상세 보기  ·  #${task.id}",
         modifier = Modifier.padding(top = 3f),
         color = Mist,
-        fontSize = metrics.taskDetail,
+        fontSize = 14.scaledSp,
         maxLines = 1,
       )
     }
     ActionButton(
       label = "삭제",
       modifier =
-        Modifier.width(metrics.deleteWidth).height(metrics.deleteHeight).padding(start = 8f),
+        Modifier.width(68.scaledSize).height(48.scaledSize).padding(start = 8f),
       background = DeepPanel,
       contentColor = Coral,
-      fontSize = metrics.action,
+      fontSize = 17.scaledSp,
     ) {
       hostAction("task.delete.${task.id}")
     }
@@ -237,14 +195,13 @@ private fun RcScope.TaskDetailScreen(
   snapshot: ChecklistServerSnapshot,
   task: ChecklistTask,
   screen: androidx.compose.remote.creation.dsl.RcInteger,
-  metrics: ChecklistMetrics,
-) {
+) = context(density()) {
   Column(modifier = Modifier.fillMaxSize().background(Ink).padding(18f)) {
     ActionButton(
       label = "←  목록",
-      modifier = Modifier.width(metrics.backWidth).height(metrics.backHeight),
+      modifier = Modifier.width(112.scaledSize).height(52.scaledSize),
       background = Panel,
-      fontSize = metrics.action,
+      fontSize = 17.scaledSp,
     ) {
       setValue(screen, 0)
     }
@@ -253,13 +210,13 @@ private fun RcScope.TaskDetailScreen(
       "TASK DETAIL  ·  #${task.id}",
       modifier = Modifier.padding(top = 30f),
       color = Lime,
-      fontSize = metrics.eyebrow,
+      fontSize = 14.scaledSp,
     )
     Text(
       task.title,
       modifier = Modifier.padding(top = 10f),
       color = White,
-      fontSize = metrics.detailTitle,
+      fontSize = 34.scaledSp,
       overflow = RcTextOverflow.Ellipsis,
       maxLines = 4,
     )
@@ -267,7 +224,7 @@ private fun RcScope.TaskDetailScreen(
       task.detail,
       modifier = Modifier.padding(top = 16f),
       color = Mist,
-      fontSize = metrics.body,
+      fontSize = 17.scaledSp,
       maxLines = 3,
     )
 
@@ -279,18 +236,18 @@ private fun RcScope.TaskDetailScreen(
           .background(Panel)
           .padding(18f),
     ) {
-      Text("DOCUMENT", color = Mist, fontSize = metrics.eyebrow)
+      Text("DOCUMENT", color = Mist, fontSize = 14.scaledSp)
       Text(
         "서버 revision R${snapshot.revision}",
         modifier = Modifier.padding(top = 8f),
         color = White,
-        fontSize = metrics.body,
+        fontSize = 17.scaledSp,
       )
       Text(
         "이 화면 전환은 Remote Compose StateLayout 내부에서 실행됩니다.",
         modifier = Modifier.padding(top = 8f),
         color = Mist,
-        fontSize = metrics.taskDetail,
+        fontSize = 14.scaledSp,
         maxLines = 3,
       )
     }
@@ -299,10 +256,10 @@ private fun RcScope.TaskDetailScreen(
 
     ActionButton(
       label = "이 작업 삭제",
-      modifier = Modifier.fillMaxWidth().height(metrics.addHeight),
+      modifier = Modifier.fillMaxWidth().height(64.scaledSize),
       background = Coral,
       contentColor = Ink,
-      fontSize = metrics.action,
+      fontSize = 17.scaledSp,
     ) {
       hostAction("task.delete.${task.id}")
     }
@@ -310,19 +267,25 @@ private fun RcScope.TaskDetailScreen(
       "삭제가 성공하면 최신 목록 문서를 자동으로 다시 불러옵니다",
       modifier = Modifier.padding(top = 8f),
       color = Mist,
-      fontSize = metrics.footnote,
+      fontSize = 14.scaledSp,
     )
   }
 }
 
-private fun scaledSp(density: RcFloat, value: Float): RcSp = RcSp((density * value).toFloat())
+context(density: RcFloat)
+private val Int.scaledSp: RcSp
+  get() = RcSp((density * toFloat()).toFloat())
+
+context(density: RcFloat)
+private val Int.scaledSize: RcFloat
+  get() = (density * toFloat()).flush()
 
 private fun RcScope.ActionButton(
   label: String,
   modifier: Modifier,
+  fontSize: RcSp,
   background: Int = Panel,
   contentColor: Int = White,
-  fontSize: RcSp = 18.rsp,
   action: RcActionScope.() -> Unit,
 ) {
   Box(

@@ -31,4 +31,4 @@ plugins {
 
 rootProject.name = "RemoteStateLab"
 include(":app")
-include(":server")
+includeBuild("server")

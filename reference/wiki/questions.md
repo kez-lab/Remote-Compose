@@ -2,8 +2,8 @@
 title: Open Questions
 type: question
 created: 2026-07-10
-updated: 2026-07-11
-as_of: 2026-07-11
+updated: 2026-07-12
+as_of: 2026-07-12
 ---
 
 # 열린 질문
@@ -24,6 +24,7 @@ as_of: 2026-07-11
 - JVM host action이 여러 state 값을 typed payload로 전달할 수 있게 되는가?
 - Remote document 안에서 IME text input을 받을 supported component가 제공되는가?
 - 큰 server dataset을 위한 lazy/virtualized list 계약이 제공되는가?
+- Android Developers action reference의 `ValueChange` 표기와 alpha14 artifact의 `valueChange` 표기 불일치는 언제 해소되는가?
 
 ## alpha14 재현 이슈
 
@@ -50,6 +51,7 @@ as_of: 2026-07-11
 - font scale, RTL, locale, screen reader의 release gate는?
 - state 값과 rendered text/semantics 일치를 어떻게 자동 검증하는가?
 - custom SDUI renderer와의 비교 기준과 승인자는 누구인가?
+- Codelab의 public Compose code block을 실제 alpha artifact로 compile하고 player golden까지 검증하는 fixture를 어느 module에 둘 것인가?
 
 ## 갱신 트리거
 
