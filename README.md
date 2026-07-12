@@ -3,14 +3,14 @@
 AndroidX Remote Compose를 **Ktor/JVM document producer → Android embedded player** 구조로 조사하고 실제 기기에서 검증한 저장소입니다.
 
 [![Remote Compose](https://img.shields.io/badge/Remote%20Compose-1.0.0--alpha14-3ddc84)](https://developer.android.com/jetpack/androidx/releases/compose-remote)
-[![Codelab](https://img.shields.io/badge/GitHub%20Pages-Codelab-4285f4)](https://kez-lab.github.io/Remote-Compose/)
+[![Codelab](https://img.shields.io/badge/GitHub%20Pages-Codelab-4285f4)](https://kez-lab.org/Remote-Compose/)
 [![Deploy Codelab](https://github.com/kez-lab/Remote-Compose/actions/workflows/pages.yml/badge.svg)](https://github.com/kez-lab/Remote-Compose/actions/workflows/pages.yml)
 
 > 이 저장소는 Google 공식 Codelab이나 production-ready SDK가 아닙니다. `1.0.0-alpha14`의 procedural JVM builder와 embedded player는 고정 source 기준 `LIBRARY_GROUP` restricted API입니다.
 
 ## Interactive Codelab
 
-**[GitHub Pages에서 Remote Compose 서버 SDUI 코드랩 열기](https://kez-lab.github.io/Remote-Compose/)**
+**[GitHub Pages에서 Remote Compose 서버 SDUI 코드랩 열기](https://kez-lab.org/Remote-Compose/)**
 
 코드랩은 한 가지 실행 경로만 따라갑니다.
 
